@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
             <Globe className="w-3.5 h-3.5 text-[#1b6b51]" />
             <span className="font-semibold uppercase tracking-wider">USD / NGN</span>
           </div>
-          <span className="font-mono font-semibold text-[#1a1c1c]">₦{settings.currentUsdExchangeRate.toLocaleString()}/$</span>
+          <span className="font-mono font-semibold text-[#1a1c1c]">₦{(settings?.currentUsdExchangeRate ?? 1780).toLocaleString()}/$</span>
         </div>
 
         <div className="flex items-center justify-between text-[11px] text-[#747878]">
@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
             <Coins className="w-3.5 h-3.5 text-[#b45309]" />
             <span className="font-semibold uppercase tracking-wider">Gold Spot</span>
           </div>
-          <span className="font-mono font-semibold text-[#1a1c1c]">${settings.currentGoldSpotPriceUsd.toLocaleString()}/oz</span>
+          <span className="font-mono font-semibold text-[#1a1c1c]">${(settings?.currentGoldSpotPriceUsd ?? 3369.67).toLocaleString()}/oz</span>
         </div>
 
         <div className="pt-2 border-t border-[#e3e2e1] flex items-center justify-between">

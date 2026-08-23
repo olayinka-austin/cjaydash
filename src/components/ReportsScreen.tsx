@@ -58,7 +58,7 @@ export const ReportsScreen: React.FC = () => {
             Asset Class Valuation &amp; Yield Audit
           </span>
           <span className="text-xs font-mono font-semibold text-[#1a1c1c]">
-            Base Currency: NGN (₦) &middot; Ref Rate: ₦{settings.currentUsdExchangeRate.toLocaleString()}/$
+            Base Currency: NGN (₦) &middot; Ref Rate: ₦{(settings?.currentUsdExchangeRate ?? 1780).toLocaleString()}/$
           </span>
         </div>
 

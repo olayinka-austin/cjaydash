@@ -42,7 +42,7 @@ export const EbookDcaSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
         </div>
 
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-4 rounded text-center">
-          <div className="text-[11px] font-bold text-[#1b6b51] tracking-wider uppercase">CURRENT VALUE @ ₦{currentUsdRate.toLocaleString()}</div>
+          <div className="text-[11px] font-bold text-[#1b6b51] tracking-wider uppercase">CURRENT VALUE @ ₦{(currentUsdRate ?? 1780).toLocaleString()}</div>
           <div className="text-xl font-bold font-mono text-[#1b6b51] mt-1 tabular-nums">
             {formatNaira(currentValNaira)}
           </div>

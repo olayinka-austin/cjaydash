@@ -81,7 +81,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({ onOpenAddModal, onOpen
         <MetricCard
           label="USD DENOMINATED ASSETS"
           value={formatUSD(summary.totalPortfolioWorthUsd)}
-          subtitle={`Converted @ ₦${settings.currentUsdExchangeRate.toLocaleString()}/$`}
+          subtitle={`Converted @ ₦${(settings?.currentUsdExchangeRate ?? 1780).toLocaleString()}/$`}
           trend={{
             value: `+${formatUSD(summary.realizedProfitUsd)}`,
             isPositive: true,

@@ -44,7 +44,7 @@ export const MutualFundsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
 
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-5 rounded">
           <div className="text-[11px] font-semibold text-[#747878] uppercase tracking-wider">TOTAL UNITS HELD</div>
-          <div className="text-2xl font-bold font-mono text-[#1a1c1c] mt-1">{totalUnits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</div>
+          <div className="text-2xl font-bold font-mono text-[#1a1c1c] mt-1">{(totalUnits ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</div>
           <div className="text-xs text-[#747878] mt-1">Accumulated units purchased</div>
         </div>
 

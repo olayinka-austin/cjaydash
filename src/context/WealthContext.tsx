@@ -111,6 +111,7 @@ interface WealthContextType {
   
   // Bulk Data Actions
   resetToMasterWorkbook: () => void;
+  resetToWorkbookDefaults: () => void;
   importParsedData: (importedData: any) => void;
 }
 
@@ -690,6 +691,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         deleteDocument,
         updateSettings,
         resetToMasterWorkbook,
+        resetToWorkbookDefaults: resetToMasterWorkbook,
         importParsedData
       }}
     >
