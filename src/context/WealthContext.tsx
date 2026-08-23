@@ -235,6 +235,10 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
         setter(items);
       }, (error) => {
+        if (error.code === 'unavailable' || error.message?.includes('offline') || error.message?.includes('could not reach')) {
+          console.info(`Firestore ${collName} is currently operating in offline/cached mode.`);
+          return;
+        }
         console.error(`Error listening to ${collName}:`, error);
         setSyncStatus('error');
         setSyncError(`Failed to sync ${collName}: ${error.message}`);

@@ -16,7 +16,8 @@ import {
   Coins,
   LogOut,
   ShieldCheck,
-  Database
+  Database,
+  X
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
 import { useAuth } from '../context/AuthContext';
@@ -24,9 +25,15 @@ import { formatNaira } from '../utils/calculations';
 
 interface SidebarProps {
   onOpenAddModal: () => void;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  onOpenAddModal, 
+  isOpenMobile = false, 
+  onCloseMobile = () => {} 
+}) => {
   const { activeScreen, setActiveScreen, setSelectedCategory, summary, settings, isDataLoading } = useWealth();
   const { user, signOut } = useAuth();
 
@@ -44,12 +51,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
     { id: 'settings', label: 'Settings & Rates', icon: Settings },
   ];
 
-  return (
-    <aside className="w-64 bg-[#faf9f8] border-r border-[#e3e2e1] flex flex-col h-screen select-none shrink-0 no-print">
+  const handleNavClick = (screenId: string) => {
+    setActiveScreen(screenId);
+    if (screenId === 'investments') {
+      setSelectedCategory('all');
+    }
+    onCloseMobile();
+  };
+
+  const handleAddClick = () => {
+    onOpenAddModal();
+    onCloseMobile();
+  };
+
+  const sidebarContent = (
+    <div className="flex flex-col h-full bg-[#faf9f8] select-none">
       {/* Brand Header */}
-      <div className="p-6 border-b border-[#e3e2e1]">
+      <div className="p-4 sm:p-6 border-b border-[#e3e2e1] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-[#1a1c1c] text-[#faf9f8] flex items-center justify-center font-bold text-base tracking-tighter">
+          <div className="w-8 h-8 rounded bg-[#1a1c1c] text-[#faf9f8] flex items-center justify-center font-bold text-base tracking-tighter shrink-0">
             II
           </div>
           <div>
@@ -57,13 +77,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
             <p className="text-[11px] font-medium tracking-wider uppercase text-[#747878]">Terminal &middot; 2025/2026</p>
           </div>
         </div>
+
+        {/* Mobile Close Button */}
+        <button
+          onClick={onCloseMobile}
+          className="lg:hidden p-1.5 text-[#747878] hover:text-[#1a1c1c] hover:bg-[#e3e2e1] rounded-md transition-colors cursor-pointer"
+          aria-label="Close Navigation"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Quick Add Action */}
-      <div className="px-4 py-3">
+      <div className="px-3 sm:px-4 py-3">
         <button
-          onClick={onOpenAddModal}
-          className="w-full bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3 py-2.5 rounded text-[12px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 shadow-sm cursor-pointer"
+          onClick={handleAddClick}
+          className="w-full bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3 py-2.5 rounded text-[12px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 shadow-sm cursor-pointer min-h-[42px]"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Add Investment</span>
@@ -71,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto px-2 sm:px-3 py-1.5 space-y-0.5 scrollbar-thin">
         <div className="px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase text-[#747878]">
           Navigation
         </div>
@@ -81,24 +110,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
           return (
             <button
               key={item.id}
-              onClick={() => {
-                setActiveScreen(item.id);
-                if (item.id === 'investments') {
-                  setSelectedCategory('all');
-                }
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded text-[13px] font-medium transition-all group text-left cursor-pointer ${
+              onClick={() => handleNavClick(item.id)}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded text-[13px] font-medium transition-all group text-left cursor-pointer min-h-[40px] ${
                 isActive
                   ? 'bg-[#ffffff] text-[#1a1c1c] font-semibold shadow-xs border-l-2 border-[#1a1c1c]'
                   : 'text-[#444748] hover:bg-[#f4f3f2] hover:text-[#1a1c1c]'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-[#1a1c1c]' : 'text-[#747878] group-hover:text-[#1a1c1c]'}`} />
-                <span>{item.label}</span>
+                <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#1a1c1c]' : 'text-[#747878] group-hover:text-[#1a1c1c]'}`} />
+                <span className="truncate">{item.label}</span>
               </div>
               {item.badge && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-[#f4f3f2] text-[#444748] border border-[#e3e2e1]">
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-[#f4f3f2] text-[#444748] border border-[#e3e2e1] shrink-0 ml-1.5">
                   {item.badge}
                 </span>
               )}
@@ -108,10 +132,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
       </nav>
 
       {/* Live Market Rates & Portfolio Widget */}
-      <div className="p-4 border-t border-[#e3e2e1] bg-[#f4f3f2]/60 space-y-2">
+      <div className="p-3 sm:p-4 border-t border-[#e3e2e1] bg-[#f4f3f2]/60 space-y-2 shrink-0">
         <div className="flex items-center justify-between text-[11px] text-[#747878]">
           <div className="flex items-center gap-1.5">
-            <Globe className="w-3.5 h-3.5 text-[#1b6b51]" />
+            <Globe className="w-3.5 h-3.5 text-[#1b6b51] shrink-0" />
             <span className="font-semibold uppercase tracking-wider">USD / NGN</span>
           </div>
           <span className="font-mono font-semibold text-[#1a1c1c]">₦{(settings?.currentUsdExchangeRate ?? 1780).toLocaleString()}/$</span>
@@ -119,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
 
         <div className="flex items-center justify-between text-[11px] text-[#747878]">
           <div className="flex items-center gap-1.5">
-            <Coins className="w-3.5 h-3.5 text-[#b45309]" />
+            <Coins className="w-3.5 h-3.5 text-[#b45309] shrink-0" />
             <span className="font-semibold uppercase tracking-wider">Gold Spot</span>
           </div>
           <span className="font-mono font-semibold text-[#1a1c1c]">${(settings?.currentGoldSpotPriceUsd ?? 3369.67).toLocaleString()}/oz</span>
@@ -145,13 +169,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
             <button
               onClick={() => signOut()}
               title="Sign Out"
-              className="text-[#ba1a1a] hover:underline cursor-pointer flex items-center gap-0.5"
+              className="text-[#ba1a1a] hover:underline cursor-pointer flex items-center gap-0.5 p-1"
             >
-              <LogOut className="w-3 h-3" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar (lg: screens) */}
+      <aside className="hidden lg:flex w-64 border-r border-[#e3e2e1] flex-col h-screen select-none shrink-0 no-print">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer (Overlay for < lg screens) */}
+      {isOpenMobile && (
+        <div className="fixed inset-0 z-50 lg:hidden flex no-print">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity" 
+            onClick={onCloseMobile}
+            aria-hidden="true"
+          />
+
+          {/* Off-canvas Drawer Panel */}
+          <div className="relative w-72 max-w-[85vw] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 };

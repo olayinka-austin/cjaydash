@@ -497,12 +497,12 @@ export const GlobalSearch: React.FC = () => {
   ];
 
   return (
-    <div ref={containerRef} className="relative flex-1 max-w-xl mx-2 sm:mx-4 md:mx-6">
-      {/* Search Input Bar (Desktop & Tablet) */}
+    <div ref={containerRef} className="relative flex-1 max-w-xl mx-1 sm:mx-4 md:mx-6 min-w-0">
+      {/* Search Input Bar (Desktop & Tablet & Mobile) */}
       <div className="relative">
         <div className="flex items-center w-full bg-[#ffffff] border border-[#e3e2e1] hover:border-[#c4c7c7] focus-within:border-[#1a1c1c] rounded transition-colors shadow-2xs">
-          <div className="pl-3 pr-2 py-2 text-[#747878] flex items-center justify-center">
-            <Search className="w-4 h-4" />
+          <div className="pl-2.5 sm:pl-3 pr-1.5 sm:pr-2 py-1.5 sm:py-2 text-[#747878] flex items-center justify-center shrink-0">
+            <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
 
           <input
@@ -516,11 +516,11 @@ export const GlobalSearch: React.FC = () => {
             }}
             onFocus={() => setIsOpen(true)}
             onKeyDown={handleKeyDown}
-            placeholder="Search all records by symbol, name, category, broker (e.g. O, GLD, ACCESSCORP, Dangote)..."
-            className="w-full bg-transparent py-1.5 text-xs text-[#1a1c1c] placeholder-[#747878] focus:outline-none"
+            placeholder="Search records, tickers, bonds (e.g. O, GLD, Dangote)..."
+            className="w-full bg-transparent py-1 sm:py-1.5 text-xs text-[#1a1c1c] placeholder-[#747878] focus:outline-none truncate"
           />
 
-          <div className="flex items-center gap-1 pr-2.5">
+          <div className="flex items-center gap-1 pr-2">
             {searchQuery ? (
               <button
                 onClick={handleClear}
@@ -541,9 +541,9 @@ export const GlobalSearch: React.FC = () => {
 
       {/* Live Search Results Dropdown Popover */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#ffffff] border border-[#e3e2e1] rounded shadow-xl z-50 overflow-hidden text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="fixed inset-x-2 top-16 sm:absolute sm:inset-x-0 sm:top-full mt-1 sm:mt-1.5 bg-[#ffffff] border border-[#e3e2e1] rounded-lg sm:rounded shadow-2xl z-50 overflow-hidden text-xs animate-in fade-in slide-in-from-top-1 duration-150 max-h-[80vh] sm:max-h-none flex flex-col">
           {/* Filter Chips Bar */}
-          <div className="bg-[#faf9f8] border-b border-[#e3e2e1] px-3 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+          <div className="bg-[#faf9f8] border-b border-[#e3e2e1] px-3 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none shrink-0">
             <span className="text-[10px] font-semibold text-[#747878] uppercase tracking-wider mr-1 shrink-0">
               Filter:
             </span>

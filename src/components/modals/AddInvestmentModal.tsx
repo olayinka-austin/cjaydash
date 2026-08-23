@@ -358,15 +358,15 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-[#ffffff] border border-[#e3e2e1] rounded-md max-w-xl w-full p-6 shadow-xl space-y-5 my-8">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+      <div className="bg-[#ffffff] border border-[#e3e2e1] rounded-md max-w-xl w-full p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5 my-auto max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#e3e2e1]">
           <div>
             <h2 className="text-base font-semibold text-[#1a1c1c]">New Investment Record</h2>
             <p className="text-xs text-[#747878]">Select asset category and input workbook parameters</p>
           </div>
-          <button onClick={onClose} className="text-[#747878] hover:text-[#1a1c1c] p-1">
+          <button onClick={onClose} className="text-[#747878] hover:text-[#1a1c1c] p-1.5 rounded hover:bg-[#f4f3f2] cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>

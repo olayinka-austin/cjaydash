@@ -108,29 +108,47 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
     setHoverIndex(closestIndex);
   };
 
+  const handleTouchMove = (e: React.TouchEvent<SVGSVGElement>) => {
+    if (!chartRef.current || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const rect = chartRef.current.getBoundingClientRect();
+    const touchX = ((touch.clientX - rect.left) / rect.width) * width;
+    
+    let closestIndex = 0;
+    let closestDist = Infinity;
+    points.forEach((p, idx) => {
+      const dist = Math.abs(p.x - touchX);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestIndex = idx;
+      }
+    });
+    setHoverIndex(closestIndex);
+  };
+
   return (
-    <div className="bg-[#ffffff] border border-[#e3e2e1] rounded p-6">
+    <div className="bg-[#ffffff] border border-[#e3e2e1] rounded p-4 sm:p-6">
       {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#f4f3f2]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-[#f4f3f2]">
         <div>
-          <div className="text-[11px] font-semibold tracking-wider uppercase text-[#747878] mb-1">
+          <div className="text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase text-[#747878] mb-1">
             Historical Portfolio Valuation Trajectory
           </div>
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-semibold font-mono tracking-tight text-[#1a1c1c] tabular-nums">
+          <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
+            <span className="text-2xl sm:text-3xl font-semibold font-mono tracking-tight text-[#1a1c1c] tabular-nums">
               {formatNaira(activePoint.valueNaira)}
             </span>
-            <span className="text-sm font-mono text-[#747878] tabular-nums">
+            <span className="text-xs sm:text-sm font-mono text-[#747878] tabular-nums">
               {formatUSD(activePoint.valueNaira / (settings.currentUsdExchangeRate || 1780))}
             </span>
           </div>
-          <p className="text-xs text-[#747878] mt-0.5">
+          <p className="text-[11px] sm:text-xs text-[#747878] mt-0.5">
             {activePoint.label}
           </p>
         </div>
 
         {/* Time Period Filter */}
-        <div className="flex items-center bg-[#eeeeed] p-0.5 rounded text-[11px] font-semibold self-start sm:self-auto">
+        <div className="flex items-center bg-[#eeeeed] p-0.5 rounded text-[11px] font-semibold self-start sm:self-auto overflow-x-auto">
           {(['1M', '3M', '6M', '1Y', 'ALL'] as const).map((period) => (
             <button
               key={period}
@@ -138,7 +156,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
                 setSelectedPeriod(period);
                 setHoverIndex(null);
               }}
-              className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
+              className={`px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer ${
                 selectedPeriod === period
                   ? 'bg-[#ffffff] text-[#1a1c1c] shadow-xs'
                   : 'text-[#747878] hover:text-[#1a1c1c]'
@@ -150,14 +168,17 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
         </div>
       </div>
 
-      {/* SVG Chart Rendering */}
+      {/* SVG Chart Rendering & Interactive Tooltip */}
       <div className="relative mt-4">
         <svg
           ref={chartRef}
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-56 overflow-visible cursor-crosshair"
+          className="w-full h-48 sm:h-56 overflow-visible cursor-crosshair select-none touch-none"
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHoverIndex(null)}
+          onTouchStart={handleTouchMove}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={() => setHoverIndex(null)}
         >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -196,27 +217,45 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
             strokeLinejoin="round"
           />
 
-          {/* Hairline trigger & data dot */}
+          {/* Interactive Data Point Dots */}
+          {points.map((pt, i) => {
+            const isHovered = hoverIndex === i;
+            return (
+              <g key={`point-${i}`} className="cursor-pointer">
+                {/* Larger transparent hover target */}
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="14"
+                  fill="transparent"
+                  onMouseEnter={() => setHoverIndex(i)}
+                />
+                {/* Visible indicator circle */}
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={isHovered ? '6' : '3.5'}
+                  fill="#ffffff"
+                  stroke="#1a1c1c"
+                  strokeWidth={isHovered ? '2.5' : '1.5'}
+                  className="transition-all duration-150"
+                />
+              </g>
+            );
+          })}
+
+          {/* Vertical Guide Hairline */}
           {hoverIndex !== null && !isNaN(activePoint.x) && !isNaN(activePoint.y) && (
-            <g>
-              <line
-                x1={activePoint.x}
-                y1={paddingY}
-                x2={activePoint.x}
-                y2={height - paddingY}
-                stroke="#747878"
-                strokeWidth="1"
-                strokeDasharray="2 2"
-              />
-              <circle
-                cx={activePoint.x}
-                cy={activePoint.y}
-                r="5"
-                fill="#ffffff"
-                stroke="#1a1c1c"
-                strokeWidth="2.5"
-              />
-            </g>
+            <line
+              x1={activePoint.x}
+              y1={paddingY}
+              x2={activePoint.x}
+              y2={height - paddingY}
+              stroke="#747878"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+              className="pointer-events-none"
+            />
           )}
 
           {/* X Axis Labels */}
@@ -226,12 +265,67 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
               x={pt.x}
               y={height - 6}
               textAnchor="middle"
-              className="text-[10px] font-mono fill-[#747878]"
+              className="text-[10px] fill-[#747878] select-none font-sans"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
             >
               {pt.date}
             </text>
           ))}
         </svg>
+
+        {/* Floating Interactive Tooltip */}
+        {hoverIndex !== null && !isNaN(activePoint.x) && !isNaN(activePoint.y) && (
+          <div
+            className="absolute pointer-events-none z-30 transition-all duration-75 ease-out"
+            style={{
+              left: `${(activePoint.x / width) * 100}%`,
+              top: `${(activePoint.y / height) * 100}%`,
+              transform: `translate(${
+                (activePoint.x / width) < 0.25
+                  ? '0%'
+                  : (activePoint.x / width) > 0.75
+                  ? '-100%'
+                  : '-50%'
+              }, -100%) translateY(-14px)`,
+              fontFamily: "'Poppins', sans-serif"
+            }}
+          >
+            <div className="bg-[#1a1c1c] text-[#faf9f8] px-3 py-2 rounded shadow-lg border border-[#2f3130] min-w-[140px] whitespace-nowrap">
+              {/* Tooltip Header / Date */}
+              <div className="flex items-center justify-between gap-2 border-b border-[#3e4140] pb-1 mb-1">
+                <span className="text-[10px] font-medium text-[#c4c7c7] tracking-wider uppercase">
+                  {activePoint.date}
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1b6b51]" />
+              </div>
+
+              {/* Tooltip Value in Naira */}
+              <div className="text-xs font-semibold text-[#faf9f8] tabular-nums">
+                {formatNaira(activePoint.valueNaira)}
+              </div>
+
+              {/* Tooltip Value in USD */}
+              <div className="text-[10px] text-[#c4c7c7] tabular-nums">
+                {formatUSD(activePoint.valueNaira / (settings.currentUsdExchangeRate || 1780))}
+              </div>
+
+              {/* Optional Milestone Annotation if available */}
+              {activePoint.label && activePoint.label.includes(' - ') && (
+                <div className="text-[9px] text-[#909393] mt-1 pt-1 border-t border-[#3e4140] max-w-[180px] truncate">
+                  {activePoint.label.split(' - ')[1]}
+                </div>
+              )}
+            </div>
+
+            {/* Downward Pointer Caret */}
+            <div
+              className="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#1a1c1c] mx-auto mt-[-1px]"
+              style={{
+                marginLeft: (activePoint.x / width) < 0.25 ? '16px' : (activePoint.x / width) > 0.75 ? 'calc(100% - 20px)' : 'auto'
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

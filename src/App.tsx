@@ -4,6 +4,7 @@ import { WealthProvider, useWealth } from './context/WealthContext';
 import { AuthScreen } from './components/AuthScreen';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { OverviewScreen } from './components/OverviewScreen';
 import { PortfolioScreen } from './components/PortfolioScreen';
 import { InvestmentsScreen } from './components/InvestmentsScreen';
@@ -34,6 +35,7 @@ const DashboardContent: React.FC = () => {
     commercialPaperRecords
   } = useWealth();
   
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
@@ -53,9 +55,9 @@ const DashboardContent: React.FC = () => {
 
   if (isDataLoading) {
     return (
-      <div className="flex h-screen bg-[#faf9f8] items-center justify-center text-[#1a1c1c]">
-        <div className="flex flex-col items-center gap-3 bg-[#ffffff] border border-[#e3e2e1] p-8 rounded shadow-xs max-w-sm text-center">
-          <div className="w-10 h-10 rounded-full bg-[#1a1c1c] text-[#faf9f8] flex items-center justify-center font-bold text-sm">
+      <div className="flex h-screen bg-[#faf9f8] items-center justify-center text-[#1a1c1c] p-4">
+        <div className="flex flex-col items-center gap-3 bg-[#ffffff] border border-[#e3e2e1] p-6 sm:p-8 rounded shadow-xs max-w-sm w-full text-center">
+          <div className="w-10 h-10 rounded bg-[#1a1c1c] text-[#faf9f8] flex items-center justify-center font-bold text-sm">
             II
           </div>
           <div className="flex items-center gap-2 font-semibold text-xs tracking-wider uppercase text-[#1a1c1c]">
@@ -72,26 +74,33 @@ const DashboardContent: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#faf9f8] text-[#1a1c1c] overflow-hidden font-sans">
-      {/* Navigation Sidebar */}
-      <Sidebar onOpenAddModal={() => handleOpenAddModal()} />
+      {/* Navigation Sidebar (Desktop + Mobile Drawer) */}
+      <Sidebar 
+        onOpenAddModal={() => handleOpenAddModal()} 
+        isOpenMobile={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Top Header */}
-        <Header onOpenAddModal={() => handleOpenAddModal()} />
+        <Header 
+          onOpenAddModal={() => handleOpenAddModal()} 
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(prev => !prev)}
+        />
 
         {/* First-time onboarding banner if ledger is totally empty */}
         {totalEntries === 0 && (
-          <div className="bg-[#1a1c1c] text-[#faf9f8] px-6 py-3 flex items-center justify-between text-xs shrink-0">
+          <div className="bg-[#1a1c1c] text-[#faf9f8] px-4 sm:px-6 py-2.5 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs shrink-0">
             <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-[#a6f2d1]" />
+              <Database className="w-4 h-4 text-[#a6f2d1] shrink-0" />
               <span>
-                <strong>Your Cloud Firestore ledger is currently empty.</strong> Would you like to seed the baseline Master Workbook dataset (10 investment classes)?
+                <strong>Your Cloud Firestore ledger is empty.</strong> Seed the baseline Master Workbook dataset (10 classes)?
               </span>
             </div>
             <button
               onClick={() => seedInitialWorkbookToUserFirestore()}
-              className="bg-[#faf9f8] text-[#1a1c1c] hover:bg-[#ffffff] px-3 py-1 rounded font-semibold text-[11px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="bg-[#faf9f8] text-[#1a1c1c] hover:bg-[#ffffff] px-3 py-1 rounded font-semibold text-[11px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0 self-end sm:self-auto"
             >
               <RefreshCw className="w-3 h-3" />
               <span>Seed Master Portfolio</span>
@@ -99,8 +108,8 @@ const DashboardContent: React.FC = () => {
           </div>
         )}
 
-        {/* Scrollable Screen Viewport */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+        {/* Scrollable Screen Viewport with bottom safe area for Mobile Bottom Nav */}
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8 pb-20 lg:pb-8">
           <div className="max-w-7xl mx-auto">
             {activeScreen === 'overview' && (
               <OverviewScreen
@@ -154,6 +163,12 @@ const DashboardContent: React.FC = () => {
             )}
           </div>
         </main>
+
+        {/* Mobile Bottom Navigation for quick thumb access on phones & tablets */}
+        <MobileBottomNav
+          onToggleMenu={() => setIsMobileSidebarOpen(prev => !prev)}
+          onOpenAddModal={() => handleOpenAddModal()}
+        />
       </div>
 
       {/* Modals & Dialogs */}
