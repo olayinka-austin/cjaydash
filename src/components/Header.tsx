@@ -12,6 +12,7 @@ import {
 import { useWealth } from '../context/WealthContext';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORY_DETAILS } from '../utils/calculations';
+import { GlobalSearch } from './GlobalSearch';
 
 interface HeaderProps {
   onOpenAddModal: () => void;
@@ -22,8 +23,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal }) => {
     activeScreen, 
     setActiveScreen, 
     selectedCategory, 
-    searchQuery, 
-    setSearchQuery,
     settings,
     updateSettings,
     syncStatus,
@@ -64,9 +63,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal }) => {
   };
 
   return (
-    <header className="h-16 bg-[#faf9f8] border-b border-[#e3e2e1] flex items-center justify-between px-6 shrink-0 z-10 no-print">
+    <header className="h-16 bg-[#faf9f8] border-b border-[#e3e2e1] flex items-center justify-between px-4 sm:px-6 shrink-0 z-20 no-print">
       {/* Left: Breadcrumbs & Title */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         <div className="flex items-center gap-1.5 text-xs text-[#747878] font-medium">
           <span className="cursor-pointer hover:text-[#1a1c1c]" onClick={() => setActiveScreen('overview')}>
             Wealth Terminal
@@ -76,30 +75,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal }) => {
         </div>
       </div>
 
-      {/* Center: Live Search Input */}
-      <div className="flex-1 max-w-md mx-6 hidden md:block">
-        <div className="relative">
-          <Search className="w-4 h-4 text-[#747878] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search symbols (O, GLD, ACCESSCORPS), platforms, brokers..."
-            className="w-full bg-[#ffffff] border border-[#e3e2e1] rounded pl-9 pr-4 py-1.5 text-xs text-[#1a1c1c] placeholder-[#747878] focus:outline-none focus:border-[#1a1c1c] transition-colors"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#747878] hover:text-[#1a1c1c]"
-            >
-              &times;
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Center: Global Search Bar Component */}
+      <GlobalSearch />
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Currency Display Filter */}
         <div className="flex items-center bg-[#eeeeed] p-0.5 rounded text-[11px] font-semibold">
           <button

@@ -20,10 +20,11 @@ export const TransactionsScreen: React.FC = () => {
     goldEtfSells,
     lockedSavingsRecords,
     setSelectedCategory,
-    setActiveScreen
+    setActiveScreen,
+    searchQuery
   } = useWealth();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchQuery || '');
   const [filterType, setFilterType] = useState<string>('all');
 
   // Consolidate transactions safely across all 10 modules
