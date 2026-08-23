@@ -3,41 +3,45 @@ import { formatNaira, formatUSD } from '../utils/calculations';
 import { useWealth } from '../context/WealthContext';
 
 interface PerformanceChartProps {
-  currentValNaira: number;
-  currentValUsd: number;
+  currentValNaira?: number;
+  currentValUsd?: number;
 }
 
 export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNaira, currentValUsd }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<'1M' | '3M' | '6M' | '1Y' | 'ALL'>('ALL');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const chartRef = useRef<SVGSVGElement>(null);
-  const { settings } = useWealth();
+  const { settings, summary } = useWealth();
+
+  const effectiveValNaira = (typeof currentValNaira === 'number' && !isNaN(currentValNaira) && currentValNaira > 0)
+    ? currentValNaira
+    : (summary?.totalCurrentValueNaira && summary.totalCurrentValueNaira > 0 ? summary.totalCurrentValueNaira : 60500000);
 
   // Historical valuation points derived from actual workbook investment dates and additions
   const chartDataMap: Record<string, { date: string; valueNaira: number; label: string }[]> = {
     '1M': [
-      { date: '01 Feb', valueNaira: currentValNaira * 0.985, label: 'Feb 1, 2026' },
-      { date: '08 Feb', valueNaira: currentValNaira * 0.991, label: 'Feb 8, 2026' },
-      { date: '15 Feb', valueNaira: currentValNaira * 0.995, label: 'Feb 15, 2026' },
-      { date: '22 Feb', valueNaira: currentValNaira, label: 'Feb 22, 2026' },
+      { date: '01 Feb', valueNaira: effectiveValNaira * 0.985, label: 'Feb 1, 2026' },
+      { date: '08 Feb', valueNaira: effectiveValNaira * 0.991, label: 'Feb 8, 2026' },
+      { date: '15 Feb', valueNaira: effectiveValNaira * 0.995, label: 'Feb 15, 2026' },
+      { date: '22 Feb', valueNaira: effectiveValNaira, label: 'Feb 22, 2026' },
     ],
     '3M': [
-      { date: 'Dec 2025', valueNaira: currentValNaira * 0.94, label: 'Dec 2025 - Gold & Equities Add' },
-      { date: 'Jan 2026', valueNaira: currentValNaira * 0.97, label: 'Jan 2026 - T-Bill Interest Accrual' },
-      { date: 'Feb 2026', valueNaira: currentValNaira, label: 'Feb 2026 - Current Position' },
+      { date: 'Dec 2025', valueNaira: effectiveValNaira * 0.94, label: 'Dec 2025 - Gold & Equities Add' },
+      { date: 'Jan 2026', valueNaira: effectiveValNaira * 0.97, label: 'Jan 2026 - T-Bill Interest Accrual' },
+      { date: 'Feb 2026', valueNaira: effectiveValNaira, label: 'Feb 2026 - Current Position' },
     ],
     '6M': [
       { date: 'Aug 2025', valueNaira: 32500000, label: 'Aug 2025 - CP & T-Bill Investments' },
       { date: 'Oct 2025', valueNaira: 46200000, label: 'Oct 2025 - FGN Coupon Schedule Accruals' },
       { date: 'Dec 2025', valueNaira: 58900000, label: 'Dec 2025 - Gold & US REITs Expansion' },
-      { date: 'Feb 2026', valueNaira: currentValNaira, label: 'Feb 2026 - Current Total' },
+      { date: 'Feb 2026', valueNaira: effectiveValNaira, label: 'Feb 2026 - Current Total' },
     ],
     '1Y': [
       { date: 'Mar 2025', valueNaira: 15000000, label: 'Mar 2025 - Initial FGN Bonds ₦15M' },
       { date: 'Jun 2025', valueNaira: 28400000, label: 'Jun 2025 - FGN Meristem & Kate' },
       { date: 'Sep 2025', valueNaira: 48900000, label: 'Sep 2025 - Commercial Paper Portfolios' },
       { date: 'Dec 2025', valueNaira: 59300000, label: 'Dec 2025 - Multi-Asset Allocations' },
-      { date: 'Feb 2026', valueNaira: currentValNaira, label: 'Feb 2026 - Current Portfolio Value' },
+      { date: 'Feb 2026', valueNaira: effectiveValNaira, label: 'Feb 2026 - Current Portfolio Value' },
     ],
     'ALL': [
       { date: 'Aug 2024', valueNaira: 1800, label: 'Aug 2024 - Ebook DCA First Tranche' },
@@ -46,13 +50,14 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
       { date: 'Jan 2025', valueNaira: 17200000, label: 'Jan 2025 - FGN Bonds & Mutual Funds' },
       { date: 'Jul 2025', valueNaira: 42800000, label: 'Jul 2025 - Dangote Sugar CP & T-Bills' },
       { date: 'Dec 2025', valueNaira: 60500000, label: 'Dec 2025 - Locked Savings Deposits' },
-      { date: 'Feb 2026', valueNaira: currentValNaira, label: 'Feb 2026 - Total Portfolio Asset Value' },
+      { date: 'Feb 2026', valueNaira: effectiveValNaira, label: 'Feb 2026 - Total Portfolio Asset Value' },
     ]
   };
 
-  const activeData = chartDataMap[selectedPeriod];
-  const minVal = Math.min(...activeData.map(d => d.valueNaira)) * 0.85;
-  const maxVal = Math.max(...activeData.map(d => d.valueNaira)) * 1.05;
+  const activeData = chartDataMap[selectedPeriod] || chartDataMap['ALL'];
+  const validVals = activeData.map(d => (isNaN(d.valueNaira) ? 0 : d.valueNaira));
+  const minVal = Math.min(...validVals) * 0.85;
+  const maxVal = Math.max(...validVals) * 1.05;
 
   const width = 800;
   const height = 260;
@@ -60,10 +65,12 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
   const paddingY = 30;
 
   const points = activeData.map((d, i) => {
-    const x = paddingX + (i / (activeData.length - 1)) * (width - paddingX * 2);
-    const normalizedY = (d.valueNaira - minVal) / (maxVal - minVal || 1);
-    const y = height - paddingY - normalizedY * (height - paddingY * 2);
-    return { ...d, x, y, index: i };
+    const val = isNaN(d.valueNaira) ? 0 : d.valueNaira;
+    const x = activeData.length > 1 ? paddingX + (i / (activeData.length - 1)) * (width - paddingX * 2) : width / 2;
+    const range = (maxVal - minVal) || 1;
+    const normalizedY = range > 0 ? (val - minVal) / range : 0.5;
+    const y = isNaN(normalizedY) ? height / 2 : height - paddingY - normalizedY * (height - paddingY * 2);
+    return { ...d, valueNaira: val, x: isNaN(x) ? paddingX : x, y: isNaN(y) ? height / 2 : y, index: i };
   });
 
   const pathD = points.reduce((acc, pt, i) => {
@@ -76,9 +83,13 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
     return `${acc} C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${pt.x} ${pt.y}`;
   }, '');
 
-  const areaD = `${pathD} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+  const areaD = points.length > 0 
+    ? `${pathD} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
+    : '';
 
-  const activePoint = hoverIndex !== null ? points[hoverIndex] : points[points.length - 1];
+  const activePoint = (hoverIndex !== null && points[hoverIndex])
+    ? points[hoverIndex]
+    : (points[points.length - 1] || { x: width / 2, y: height / 2, valueNaira: effectiveValNaira, label: 'Feb 2026 - Current Total', date: 'Feb 2026', index: 0 });
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!chartRef.current) return;
@@ -186,7 +197,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
           />
 
           {/* Hairline trigger & data dot */}
-          {hoverIndex !== null && (
+          {hoverIndex !== null && !isNaN(activePoint.x) && !isNaN(activePoint.y) && (
             <g>
               <line
                 x1={activePoint.x}

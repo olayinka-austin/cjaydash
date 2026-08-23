@@ -58,7 +58,7 @@ export const PortfolioScreen: React.FC = () => {
         />
         <MetricCard
           label="ACTIVE ASSET CLASSES"
-          value={`${summary.assetAllocation.filter(a => a.valueNaira > 0).length} of 10`}
+          value={`${(summary?.assetAllocation || []).filter(a => a && a.valueNaira > 0).length} of 10`}
           subtitle="Diversified multi-asset strategy"
         />
       </div>

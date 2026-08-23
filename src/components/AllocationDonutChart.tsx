@@ -6,8 +6,8 @@ export const AllocationDonutChart: React.FC = () => {
   const { summary, setSelectedCategory, setActiveScreen } = useWealth();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  const allocations = summary.assetAllocation.filter(a => a.valueNaira > 0);
-  const totalVal = summary.totalCurrentValueNaira || 1;
+  const allocations = (summary?.assetAllocation || []).filter(a => a && a.valueNaira > 0);
+  const totalVal = summary?.totalCurrentValueNaira || 1;
 
   // Compute SVG Donut paths
   let cumulativeAngle = 0;

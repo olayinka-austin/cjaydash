@@ -14,16 +14,18 @@ export const IncomeScreen: React.FC = () => {
 
   // Helper to determine coupon payment for a month and year
   const getCouponForMonth = (record: any, month: string, year: number): number => {
-    const isPaymentMonth = record.paymentMonths?.some((m: string) => m.toUpperCase() === month.toUpperCase());
+    if (!record) return 0;
+    const targetMonth = (month || '').toUpperCase();
+    const isPaymentMonth = record.paymentMonths?.some((m: string) => (m || '').toUpperCase() === targetMonth);
     if (!isPaymentMonth) return 0;
 
     const startYear = record.investmentYear || 2025;
     const endYear = startYear + (record.tenorYears || 3);
     
     if (year === startYear) {
-      return isPaymentMonth ? record.quarterlyInterestNaira : 0;
+      return isPaymentMonth ? (record.quarterlyInterestNaira || 0) : 0;
     } else if (year > startYear && year <= endYear) {
-      return record.quarterlyInterestNaira;
+      return record.quarterlyInterestNaira || 0;
     }
     return 0;
   };

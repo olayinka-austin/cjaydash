@@ -188,9 +188,12 @@ export const TransactionsScreen: React.FC = () => {
 
   // Filter
   const filtered = allTransactions.filter(tx => {
-    const matchesSearch = (tx.assetName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (tx.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (tx.date || '').toLowerCase().includes(searchTerm.toLowerCase());
+    if (!tx) return false;
+    const sTerm = (searchTerm || '').toLowerCase();
+    const asset = (tx.assetName || '').toLowerCase();
+    const details = (tx.details || '').toLowerCase();
+    const txDate = (tx.date || '').toLowerCase();
+    const matchesSearch = !sTerm || asset.includes(sTerm) || details.includes(sTerm) || txDate.includes(sTerm);
     const matchesCategory = filterType === 'all' || tx.category === filterType;
     return matchesSearch && matchesCategory;
   });

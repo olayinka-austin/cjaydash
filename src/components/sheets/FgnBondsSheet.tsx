@@ -24,7 +24,9 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
   // Helper to determine if a bond pays in a given month of a given year
   // In the workbook, 3-year bonds bought in 2025 pay 4 times a year for 3 years
   const getCouponForMonth = (record: any, month: string, year: number): number => {
-    const isPaymentMonth = record.paymentMonths?.some((m: string) => m.toUpperCase() === month.toUpperCase());
+    if (!record) return 0;
+    const targetMonth = (month || '').toUpperCase();
+    const isPaymentMonth = record.paymentMonths?.some((m: string) => (m || '').toUpperCase() === targetMonth);
     if (!isPaymentMonth) return 0;
 
     // A 3-year bond issued in 2025 pays through 2028
@@ -32,8 +34,8 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
     const endYear = startYear + (record.tenorYears || 3);
     
     // First coupon month logic
-    const monthIndex = calendarMonths.indexOf(month.toUpperCase());
-    const investMonthIndex = calendarMonths.indexOf(record.investmentMonth.toUpperCase());
+    const monthIndex = calendarMonths.indexOf(targetMonth);
+    const investMonthIndex = calendarMonths.indexOf((record.investmentMonth || 'FEBRUARY').toUpperCase());
 
     if (year === startYear) {
       // In first year, pays in payment months occurring after or in first coupon schedule

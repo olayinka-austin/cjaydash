@@ -12,19 +12,23 @@ import {
   FileSpreadsheet,
   Settings,
   PlusCircle,
-  TrendingDown,
   Globe,
-  Coins
+  Coins,
+  LogOut,
+  ShieldCheck,
+  Database
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
-import { formatNaira, formatUSD } from '../utils/calculations';
+import { useAuth } from '../context/AuthContext';
+import { formatNaira } from '../utils/calculations';
 
 interface SidebarProps {
   onOpenAddModal: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
-  const { activeScreen, setActiveScreen, setSelectedCategory, summary, settings } = useWealth();
+  const { activeScreen, setActiveScreen, setSelectedCategory, summary, settings, isDataLoading } = useWealth();
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -124,12 +128,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAddModal }) => {
         <div className="pt-2 border-t border-[#e3e2e1] flex items-center justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[#747878]">Total Valuation</p>
-            <p className="text-xs font-bold font-mono text-[#1a1c1c]">{formatNaira(summary.totalCurrentValueNaira, false)}</p>
+            <p className="text-xs font-bold font-mono text-[#1a1c1c]">
+              {isDataLoading ? 'Loading...' : formatNaira(summary.totalCurrentValueNaira, false)}
+            </p>
           </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#a6f2d1]/50 text-[#1b6b51] font-semibold font-mono">
-            Active
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#a6f2d1]/50 text-[#1b6b51] font-semibold font-mono flex items-center gap-1">
+            <Database className="w-2.5 h-2.5" />
+            <span>Firestore</span>
           </span>
         </div>
+
+        {/* Authenticated User Quick Info */}
+        {user && (
+          <div className="pt-2 border-t border-[#e3e2e1] flex items-center justify-between text-[10px] text-[#747878]">
+            <span className="truncate max-w-[150px] font-mono">{user.email}</span>
+            <button
+              onClick={() => signOut()}
+              title="Sign Out"
+              className="text-[#ba1a1a] hover:underline cursor-pointer flex items-center gap-0.5"
+            >
+              <LogOut className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

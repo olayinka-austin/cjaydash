@@ -54,7 +54,8 @@ export const ImportWorkflow: React.FC<ImportWorkflowProps> = ({ isOpen, onClose 
           // Auto-map common headers
           const initialMap: Record<string, string> = {};
           cols.forEach(col => {
-            const low = col.toLowerCase();
+            if (!col) return;
+            const low = String(col).toLowerCase();
             if (low.includes('date')) initialMap['date'] = col;
             if (low.includes('rate') || low.includes('dollar')) initialMap['rate'] = col;
             if (low.includes('amount') || low.includes('invested')) initialMap['amount'] = col;

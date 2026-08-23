@@ -5,7 +5,8 @@ import { CATEGORY_DETAILS, formatDate } from '../utils/calculations';
 import { Upload, FileText, Trash2, Download, Plus, Shield, Search } from 'lucide-react';
 
 export const VaultScreen: React.FC = () => {
-  const { documentRecords, addDocument, deleteDocument } = useWealth();
+  const { documents, documentRecords, addDocument, deleteDocument } = useWealth();
+  const allDocs = documentRecords || documents || [];
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -28,9 +29,12 @@ export const VaultScreen: React.FC = () => {
     }
   };
 
-  const filteredDocs = documentRecords.filter((doc) => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (doc.notes && doc.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredDocs = allDocs.filter((doc) => {
+    if (!doc) return false;
+    const sTerm = (searchTerm || '').toLowerCase();
+    const docTitle = (doc.title || '').toLowerCase();
+    const docNotes = (doc.notes || '').toLowerCase();
+    const matchesSearch = !sTerm || docTitle.includes(sTerm) || docNotes.includes(sTerm);
     const matchesCat = filterCategory === 'all' || doc.category === filterCategory;
     return matchesSearch && matchesCat;
   });
@@ -76,7 +80,7 @@ export const VaultScreen: React.FC = () => {
             onChange={(e) => setFilterCategory(e.target.value)}
             className="bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 text-xs font-semibold text-[#1a1c1c]"
           >
-            <option value="all">All Categories ({documentRecords.length})</option>
+            <option value="all">All Categories ({allDocs.length})</option>
             {Object.entries(CATEGORY_DETAILS).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}

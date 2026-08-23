@@ -1,19 +1,17 @@
 import React from 'react';
 import { useWealth } from '../context/WealthContext';
-import { Upload, FileSpreadsheet, RefreshCw, CheckCircle2, ShieldCheck, ArrowRight, Download } from 'lucide-react';
-import { CATEGORY_DETAILS } from '../utils/calculations';
-import { InvestmentCategory } from '../types';
+import { Upload, FileSpreadsheet, RefreshCw, Download } from 'lucide-react';
 
 interface ExcelImportScreenProps {
   onOpenImportModal: () => void;
 }
 
 export const ExcelImportScreen: React.FC<ExcelImportScreenProps> = ({ onOpenImportModal }) => {
-  const { summary, resetToWorkbookDefaults, setActiveScreen, setSelectedCategory } = useWealth();
+  const { seedInitialWorkbookToUserFirestore, syncStatus } = useWealth();
 
-  const handleReset = () => {
-    if (window.confirm('Restore all portfolio entries to the exact original state of the master workbook?')) {
-      resetToWorkbookDefaults();
+  const handleReset = async () => {
+    if (window.confirm('Synchronize baseline Master Workbook dataset into your personal Cloud Firestore database?')) {
+      await seedInitialWorkbookToUserFirestore();
     }
   };
 
@@ -38,7 +36,7 @@ export const ExcelImportScreen: React.FC<ExcelImportScreenProps> = ({ onOpenImpo
             <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c]">Excel Import &amp; Workbook Synchronization</h1>
           </div>
           <p className="text-xs text-[#747878] mt-1">
-            Import, reconcile, and synchronize external CSV/Excel statements into the 10 investment ledgers
+            Import, reconcile, and synchronize external CSV/Excel statements into your user Firestore ledger
           </p>
         </div>
 
@@ -66,11 +64,11 @@ export const ExcelImportScreen: React.FC<ExcelImportScreenProps> = ({ onOpenImpo
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-[#747878] uppercase tracking-wider">SYNC STATUS</span>
             <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#a6f2d1]/50 text-[#1b6b51]">
-              SYNCHRONIZED
+              FIRESTORE CLOUD SYNC
             </span>
           </div>
-          <div className="text-xl font-bold font-mono text-[#1a1c1c] mt-2">10 of 10 Classes Reconciled</div>
-          <p className="text-xs text-[#747878] mt-1">All workbook formulas and values match master ledger</p>
+          <div className="text-xl font-bold font-mono text-[#1a1c1c] mt-2">10 of 10 Classes Live</div>
+          <p className="text-xs text-[#747878] mt-1">Real-time bi-directional snapshot listeners active</p>
         </div>
 
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-5 rounded">
@@ -81,16 +79,17 @@ export const ExcelImportScreen: React.FC<ExcelImportScreenProps> = ({ onOpenImpo
 
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-5 rounded flex flex-col justify-between">
           <div>
-            <div className="text-[11px] font-semibold text-[#747878] uppercase tracking-wider">FACTORY RESET</div>
-            <div className="text-sm font-bold text-[#1a1c1c] mt-1">Restore Master Workbook</div>
-            <p className="text-xs text-[#747878] mt-1">Revert all 10 sheets to original workbook baseline</p>
+            <div className="text-[11px] font-semibold text-[#747878] uppercase tracking-wider">MASTER SEED</div>
+            <div className="text-sm font-bold text-[#1a1c1c] mt-1">Seed Master Portfolio</div>
+            <p className="text-xs text-[#747878] mt-1">Populate your Firestore ledger with the 10 master classes</p>
           </div>
           <button
             onClick={handleReset}
-            className="mt-3 bg-[#ba1a1a]/10 hover:bg-[#ba1a1a]/20 text-[#ba1a1a] px-3 py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer w-full transition-colors"
+            disabled={syncStatus === 'syncing'}
+            className="mt-3 bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3 py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer w-full transition-colors"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Reset to Master Workbook</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+            <span>{syncStatus === 'syncing' ? 'Syncing to Cloud...' : 'Seed Master Workbook'}</span>
           </button>
         </div>
       </div>
@@ -117,7 +116,7 @@ export const ExcelImportScreen: React.FC<ExcelImportScreenProps> = ({ onOpenImpo
           <div className="p-4 bg-[#faf9f8] border border-[#e3e2e1] rounded">
             <div className="w-7 h-7 rounded bg-[#1a1c1c] text-[#faf9f8] font-bold text-xs flex items-center justify-center mb-2">4</div>
             <h4 className="text-xs font-bold text-[#1a1c1c]">Direct Sync</h4>
-            <p className="text-[11px] text-[#747878] mt-1">Records are injected directly into portfolio state.</p>
+            <p className="text-[11px] text-[#747878] mt-1">Records are saved directly into your user Firestore database.</p>
           </div>
         </div>
       </div>

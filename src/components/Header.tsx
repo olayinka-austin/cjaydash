@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import {
   Search,
   Bell,
-  Download,
   Plus,
   RefreshCw,
-  SlidersHorizontal,
   ChevronRight,
-  Sparkles,
-  Printer
+  LogOut,
+  User,
+  ShieldCheck
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
+import { useAuth } from '../context/AuthContext';
 import { CATEGORY_DETAILS } from '../utils/calculations';
 
 interface HeaderProps {
@@ -26,11 +26,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal }) => {
     setSearchQuery,
     settings,
     updateSettings,
-    summary,
-    resetToMasterWorkbook
+    syncStatus,
+    seedInitialWorkbookToUserFirestore
   } = useWealth();
 
+  const { user, signOut } = useAuth();
+
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
 
   const getScreenTitle = () => {
@@ -54,8 +57,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal }) => {
     }
   };
 
-  const handleSyncMaster = () => {
-    resetToMasterWorkbook();
+  const handleSyncMaster = async () => {
+    await seedInitialWorkbookToUserFirestore();
     setShowSyncSuccess(true);
     setTimeout(() => setShowSyncSuccess(false), 2500);
   };
@@ -131,10 +134,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal }) => {
         {/* Quick Sync / Restore Master Data */}
         <button
           onClick={handleSyncMaster}
-          title="Restore official Excel master workbook data"
+          title="Synchronize baseline Master Workbook dataset to your Cloud Firestore"
           className="relative p-2 text-[#444748] hover:text-[#1a1c1c] hover:bg-[#eeeeed] rounded transition-colors cursor-pointer"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-4 h-4 ${syncStatus === 'syncing' ? 'animate-spin text-[#1b6b51]' : ''}`} />
           {showSyncSuccess && (
             <span className="absolute -top-1 -right-1 flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1b6b51] opacity-75"></span>
@@ -185,6 +188,45 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal }) => {
           <Plus className="w-3.5 h-3.5" />
           <span>New Entry</span>
         </button>
+
+        {/* User Account & Sign Out Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center gap-2 pl-2 pr-3 py-1 bg-[#eeeeed] hover:bg-[#e3e2e1] rounded text-xs font-mono font-medium text-[#1a1c1c] transition-colors cursor-pointer"
+          >
+            <div className="w-5 h-5 rounded-full bg-[#1a1c1c] text-[#faf9f8] flex items-center justify-center text-[10px] font-bold">
+              {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <span className="max-w-[110px] truncate">{user?.email?.split('@')[0] || 'User'}</span>
+          </button>
+
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-56 bg-[#ffffff] border border-[#e3e2e1] rounded shadow-lg p-2 z-50 text-xs">
+              <div className="p-2 border-b border-[#e3e2e1]">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#1b6b51]">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Authenticated Session</span>
+                </div>
+                <p className="text-[11px] font-mono text-[#747878] truncate mt-0.5" title={user?.email || ''}>
+                  {user?.email}
+                </p>
+                <p className="text-[10px] font-mono text-[#747878] truncate">UID: {user?.uid.slice(0, 10)}...</p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  signOut();
+                }}
+                className="w-full mt-1.5 p-2 rounded text-left text-xs font-medium text-[#ba1a1a] hover:bg-[#ba1a1a]/10 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out of Terminal</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

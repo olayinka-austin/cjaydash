@@ -1,4 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { collection, onSnapshot, doc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { useAuth } from './AuthContext';
+import {
+  saveUserRecord,
+  deleteUserRecord,
+  saveUserSettings,
+  bulkImportToFirestore
+} from '../lib/firestoreService';
 import {
   UbaDcaRecord,
   ForeignStockBuyRecord,
@@ -46,7 +55,12 @@ interface WealthContextType {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   
-  // Data Collections
+  // Data Loading & Sync States
+  isDataLoading: boolean;
+  syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
+  syncError: string | null;
+
+  // Data Collections (Live Firestore)
   ubaDcaRecords: UbaDcaRecord[];
   foreignStockBuys: ForeignStockBuyRecord[];
   foreignStockSells: ForeignStockSellRecord[];
@@ -61,173 +75,214 @@ interface WealthContextType {
   goldEtfSells: GoldEtfSellRecord[];
   lockedSavingsRecords: LockedSavingsRecord[];
   documents: AppDocument[];
+  documentRecords: AppDocument[];
   settings: AppSettings;
   
   // Aggregated Portfolio Metrics
   summary: PortfolioSummary;
   
-  // Mutators for All Categories
-  addUbaDca: (record: Omit<UbaDcaRecord, 'id' | 'createdAt'>) => void;
-  deleteUbaDca: (id: string) => void;
+  // Mutators for All Categories (Firestore-backed)
+  addUbaDca: (record: Omit<UbaDcaRecord, 'id' | 'createdAt'>) => Promise<void>;
+  deleteUbaDca: (id: string) => Promise<void>;
   
-  addForeignStockBuy: (record: Omit<ForeignStockBuyRecord, 'id' | 'createdAt'>) => void;
-  addForeignStockSell: (record: Omit<ForeignStockSellRecord, 'id' | 'createdAt'>) => void;
-  deleteForeignStock: (id: string, type: 'buy' | 'sell') => void;
+  addForeignStockBuy: (record: Omit<ForeignStockBuyRecord, 'id' | 'createdAt'>) => Promise<void>;
+  addForeignStockSell: (record: Omit<ForeignStockSellRecord, 'id' | 'createdAt'>) => Promise<void>;
+  deleteForeignStock: (id: string, type: 'buy' | 'sell') => Promise<void>;
   
-  addNigerianStockBuy: (record: Omit<NigerianStockBuyRecord, 'id' | 'createdAt'>) => void;
-  addNigerianStockSell: (record: Omit<NigerianStockSellRecord, 'id' | 'createdAt'>) => void;
-  deleteNigerianStock: (id: string, type: 'buy' | 'sell') => void;
+  addNigerianStockBuy: (record: Omit<NigerianStockBuyRecord, 'id' | 'createdAt'>) => Promise<void>;
+  addNigerianStockSell: (record: Omit<NigerianStockSellRecord, 'id' | 'createdAt'>) => Promise<void>;
+  deleteNigerianStock: (id: string, type: 'buy' | 'sell') => Promise<void>;
   
-  addEbookDca: (record: Omit<EbookDcaRecord, 'id' | 'createdAt'>) => void;
-  deleteEbookDca: (id: string) => void;
+  addEbookDca: (record: Omit<EbookDcaRecord, 'id' | 'createdAt'>) => Promise<void>;
+  deleteEbookDca: (id: string) => Promise<void>;
   
-  addCommercialPaper: (record: Omit<CommercialPaperRecord, 'id' | 'createdAt'>) => void;
-  updateCommercialPaper: (id: string, updates: Partial<CommercialPaperRecord>) => void;
-  deleteCommercialPaper: (id: string) => void;
+  addCommercialPaper: (record: Omit<CommercialPaperRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateCommercialPaper: (id: string, updates: Partial<CommercialPaperRecord>) => Promise<void>;
+  deleteCommercialPaper: (id: string) => Promise<void>;
   
-  addTreasuryBill: (record: Omit<TreasuryBillRecord, 'id' | 'createdAt'>) => void;
-  updateTreasuryBill: (id: string, updates: Partial<TreasuryBillRecord>) => void;
-  deleteTreasuryBill: (id: string) => void;
+  addTreasuryBill: (record: Omit<TreasuryBillRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateTreasuryBill: (id: string, updates: Partial<TreasuryBillRecord>) => Promise<void>;
+  deleteTreasuryBill: (id: string) => Promise<void>;
   
-  addMutualFund: (record: Omit<MutualFundRecord, 'id' | 'createdAt'>) => void;
-  updateMutualFund: (id: string, updates: Partial<MutualFundRecord>) => void;
-  deleteMutualFund: (id: string) => void;
+  addMutualFund: (record: Omit<MutualFundRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateMutualFund: (id: string, updates: Partial<MutualFundRecord>) => Promise<void>;
+  deleteMutualFund: (id: string) => Promise<void>;
   
-  addFgnBond: (record: Omit<FgnBondRecord, 'id' | 'createdAt'>) => void;
-  deleteFgnBond: (id: string) => void;
+  addFgnBond: (record: Omit<FgnBondRecord, 'id' | 'createdAt'>) => Promise<void>;
+  deleteFgnBond: (id: string) => Promise<void>;
   
-  addGoldEtfBuy: (record: Omit<GoldEtfBuyRecord, 'id' | 'createdAt'>) => void;
-  addGoldEtfSell: (record: Omit<GoldEtfSellRecord, 'id' | 'createdAt'>) => void;
-  deleteGoldEtf: (id: string, type: 'buy' | 'sell') => void;
+  addGoldEtfBuy: (record: Omit<GoldEtfBuyRecord, 'id' | 'createdAt'>) => Promise<void>;
+  addGoldEtfSell: (record: Omit<GoldEtfSellRecord, 'id' | 'createdAt'>) => Promise<void>;
+  deleteGoldEtf: (id: string, type: 'buy' | 'sell') => Promise<void>;
   
-  addLockedSavings: (record: Omit<LockedSavingsRecord, 'id' | 'createdAt'>) => void;
-  updateLockedSavings: (id: string, updates: Partial<LockedSavingsRecord>) => void;
-  deleteLockedSavings: (id: string) => void;
+  addLockedSavings: (record: Omit<LockedSavingsRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateLockedSavings: (id: string, updates: Partial<LockedSavingsRecord>) => Promise<void>;
+  deleteLockedSavings: (id: string) => Promise<void>;
   
   // Documents & Settings
-  addDocument: (doc: Omit<AppDocument, 'id' | 'uploadDate'>) => void;
-  deleteDocument: (id: string) => void;
-  updateSettings: (newSettings: Partial<AppSettings>) => void;
+  addDocument: (doc: Omit<AppDocument, 'id' | 'uploadDate'>) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
+  updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
   
   // Bulk Data Actions
+  seedInitialWorkbookToUserFirestore: () => Promise<void>;
   resetToMasterWorkbook: () => void;
   resetToWorkbookDefaults: () => void;
-  importParsedData: (importedData: any) => void;
+  importParsedData: (importedData: any) => Promise<void>;
 }
-
-const STORAGE_KEY = 'investment_intelligence_wealth_v1';
 
 const WealthContext = createContext<WealthContextType | undefined>(undefined);
 
 export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+
   const [activeScreen, setActiveScreen] = useState<string>('overview');
   const [selectedCategory, setSelectedCategory] = useState<InvestmentCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
-  // App state with local persistence
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_settings`);
-    return saved ? JSON.parse(saved) : initialAppSettings;
-  });
 
-  const [ubaDcaRecords, setUbaDcaRecords] = useState<UbaDcaRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_uba_dca`);
-    return saved ? JSON.parse(saved) : initialUbaDcaRecords;
-  });
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const [syncError, setSyncError] = useState<string | null>(null);
 
-  const [foreignStockBuys, setForeignStockBuys] = useState<ForeignStockBuyRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_foreign_stock_buys`);
-    return saved ? JSON.parse(saved) : initialForeignStockBuys;
-  });
+  // Firestore-synced state arrays
+  const [settings, setSettings] = useState<AppSettings>(initialAppSettings);
+  const [ubaDcaRecords, setUbaDcaRecords] = useState<UbaDcaRecord[]>([]);
+  const [foreignStockBuys, setForeignStockBuys] = useState<ForeignStockBuyRecord[]>([]);
+  const [foreignStockSells, setForeignStockSells] = useState<ForeignStockSellRecord[]>([]);
+  const [nigerianStockBuys, setNigerianStockBuys] = useState<NigerianStockBuyRecord[]>([]);
+  const [nigerianStockSells, setNigerianStockSells] = useState<NigerianStockSellRecord[]>([]);
+  const [ebookDcaRecords, setEbookDcaRecords] = useState<EbookDcaRecord[]>([]);
+  const [commercialPaperRecords, setCommercialPaperRecords] = useState<CommercialPaperRecord[]>([]);
+  const [treasuryBillRecords, setTreasuryBillRecords] = useState<TreasuryBillRecord[]>([]);
+  const [mutualFundRecords, setMutualFundRecords] = useState<MutualFundRecord[]>([]);
+  const [fgnBondRecords, setFgnBondRecords] = useState<FgnBondRecord[]>([]);
+  const [goldEtfBuys, setGoldEtfBuys] = useState<GoldEtfBuyRecord[]>([]);
+  const [goldEtfSells, setGoldEtfSells] = useState<GoldEtfSellRecord[]>([]);
+  const [lockedSavingsRecords, setLockedSavingsRecords] = useState<LockedSavingsRecord[]>([]);
+  const [documents, setDocuments] = useState<AppDocument[]>([]);
 
-  const [foreignStockSells, setForeignStockSells] = useState<ForeignStockSellRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_foreign_stock_sells`);
-    return saved ? JSON.parse(saved) : initialForeignStockSells;
-  });
-
-  const [nigerianStockBuys, setNigerianStockBuys] = useState<NigerianStockBuyRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_nigerian_stock_buys`);
-    return saved ? JSON.parse(saved) : initialNigerianStockBuys;
-  });
-
-  const [nigerianStockSells, setNigerianStockSells] = useState<NigerianStockSellRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_nigerian_stock_sells`);
-    return saved ? JSON.parse(saved) : initialNigerianStockSells;
-  });
-
-  const [ebookDcaRecords, setEbookDcaRecords] = useState<EbookDcaRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_ebook_dca`);
-    return saved ? JSON.parse(saved) : initialEbookDcaRecords;
-  });
-
-  const [commercialPaperRecords, setCommercialPaperRecords] = useState<CommercialPaperRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_commercial_papers`);
-    return saved ? JSON.parse(saved) : initialCommercialPaperRecords;
-  });
-
-  const [treasuryBillRecords, setTreasuryBillRecords] = useState<TreasuryBillRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_treasury_bills`);
-    return saved ? JSON.parse(saved) : initialTreasuryBillRecords;
-  });
-
-  const [mutualFundRecords, setMutualFundRecords] = useState<MutualFundRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_mutual_funds`);
-    return saved ? JSON.parse(saved) : initialMutualFundRecords;
-  });
-
-  const [fgnBondRecords, setFgnBondRecords] = useState<FgnBondRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_fgn_bonds`);
-    return saved ? JSON.parse(saved) : initialFgnBondRecords;
-  });
-
-  const [goldEtfBuys, setGoldEtfBuys] = useState<GoldEtfBuyRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_gold_etf_buys`);
-    return saved ? JSON.parse(saved) : initialGoldEtfBuys;
-  });
-
-  const [goldEtfSells, setGoldEtfSells] = useState<GoldEtfSellRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_gold_etf_sells`);
-    return saved ? JSON.parse(saved) : initialGoldEtfSells;
-  });
-
-  const [lockedSavingsRecords, setLockedSavingsRecords] = useState<LockedSavingsRecord[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_locked_savings`);
-    return saved ? JSON.parse(saved) : initialLockedSavingsRecords;
-  });
-
-  const [documents, setDocuments] = useState<AppDocument[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_documents`);
-    return saved ? JSON.parse(saved) : initialDocuments;
-  });
-
-  // Sync to localStorage
-  useEffect(() => {
+  // Seed master data helper
+  const seedInitialWorkbookToUserFirestore = async () => {
+    if (!user) return;
+    setSyncStatus('syncing');
     try {
-      localStorage.setItem(`${STORAGE_KEY}_settings`, JSON.stringify(settings));
-      localStorage.setItem(`${STORAGE_KEY}_uba_dca`, JSON.stringify(ubaDcaRecords));
-      localStorage.setItem(`${STORAGE_KEY}_foreign_stock_buys`, JSON.stringify(foreignStockBuys));
-      localStorage.setItem(`${STORAGE_KEY}_foreign_stock_sells`, JSON.stringify(foreignStockSells));
-      localStorage.setItem(`${STORAGE_KEY}_nigerian_stock_buys`, JSON.stringify(nigerianStockBuys));
-      localStorage.setItem(`${STORAGE_KEY}_nigerian_stock_sells`, JSON.stringify(nigerianStockSells));
-      localStorage.setItem(`${STORAGE_KEY}_ebook_dca`, JSON.stringify(ebookDcaRecords));
-      localStorage.setItem(`${STORAGE_KEY}_commercial_papers`, JSON.stringify(commercialPaperRecords));
-      localStorage.setItem(`${STORAGE_KEY}_treasury_bills`, JSON.stringify(treasuryBillRecords));
-      localStorage.setItem(`${STORAGE_KEY}_mutual_funds`, JSON.stringify(mutualFundRecords));
-      localStorage.setItem(`${STORAGE_KEY}_fgn_bonds`, JSON.stringify(fgnBondRecords));
-      localStorage.setItem(`${STORAGE_KEY}_gold_etf_buys`, JSON.stringify(goldEtfBuys));
-      localStorage.setItem(`${STORAGE_KEY}_gold_etf_sells`, JSON.stringify(goldEtfSells));
-      localStorage.setItem(`${STORAGE_KEY}_locked_savings`, JSON.stringify(lockedSavingsRecords));
-      localStorage.setItem(`${STORAGE_KEY}_documents`, JSON.stringify(documents));
-    } catch (e) {
-      console.error('Failed to sync to localStorage', e);
+      await bulkImportToFirestore(user.uid, {
+        ubaDcaRecords: initialUbaDcaRecords,
+        foreignStockBuys: initialForeignStockBuys,
+        foreignStockSells: initialForeignStockSells,
+        nigerianStockBuys: initialNigerianStockBuys,
+        nigerianStockSells: initialNigerianStockSells,
+        ebookDcaRecords: initialEbookDcaRecords,
+        commercialPaperRecords: initialCommercialPaperRecords,
+        treasuryBillRecords: initialTreasuryBillRecords,
+        mutualFundRecords: initialMutualFundRecords,
+        fgnBondRecords: initialFgnBondRecords,
+        goldEtfBuys: initialGoldEtfBuys,
+        goldEtfSells: initialGoldEtfSells,
+        lockedSavingsRecords: initialLockedSavingsRecords,
+        documents: initialDocuments,
+        settings: initialAppSettings
+      });
+      setSyncStatus('synced');
+    } catch (err: any) {
+      console.error('Error seeding initial data to Firestore:', err);
+      setSyncStatus('error');
+      setSyncError(err.message || 'Failed to populate user ledger in Firestore.');
     }
-  }, [
-    settings, ubaDcaRecords, foreignStockBuys, foreignStockSells, nigerianStockBuys, nigerianStockSells,
-    ebookDcaRecords, commercialPaperRecords, treasuryBillRecords, mutualFundRecords, fgnBondRecords,
-    goldEtfBuys, goldEtfSells, lockedSavingsRecords, documents
-  ]);
+  };
 
-  // Master Portfolio Aggregator
+  // Real-time Firestore Listeners mapped to authenticated user
+  useEffect(() => {
+    if (!user) {
+      setIsDataLoading(false);
+      setUbaDcaRecords([]);
+      setForeignStockBuys([]);
+      setForeignStockSells([]);
+      setNigerianStockBuys([]);
+      setNigerianStockSells([]);
+      setEbookDcaRecords([]);
+      setCommercialPaperRecords([]);
+      setTreasuryBillRecords([]);
+      setMutualFundRecords([]);
+      setFgnBondRecords([]);
+      setGoldEtfBuys([]);
+      setGoldEtfSells([]);
+      setLockedSavingsRecords([]);
+      setDocuments([]);
+      return;
+    }
+
+    setIsDataLoading(true);
+    const uid = user.uid;
+
+    // Listen to user document for settings
+    const userDocRef = doc(db, 'users', uid);
+    const unsubUser = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data().settings) {
+        setSettings(docSnap.data().settings);
+      }
+    }, (error) => {
+      console.warn('Settings listener error:', error);
+    });
+
+    // Helper for collection listener
+    const createListener = <T,>(collName: string, setter: (items: T[]) => void) => {
+      const collRef = collection(db, 'users', uid, collName);
+      return onSnapshot(collRef, (snapshot) => {
+        const items: T[] = [];
+        snapshot.forEach((d) => {
+          items.push({ id: d.id, ...d.data() } as T);
+        });
+        setter(items);
+      }, (error) => {
+        console.error(`Error listening to ${collName}:`, error);
+        setSyncStatus('error');
+        setSyncError(`Failed to sync ${collName}: ${error.message}`);
+      });
+    };
+
+    const unsubUba = createListener<UbaDcaRecord>('uba_dca', setUbaDcaRecords);
+    const unsubFsBuys = createListener<ForeignStockBuyRecord>('foreign_stock_buys', setForeignStockBuys);
+    const unsubFsSells = createListener<ForeignStockSellRecord>('foreign_stock_sells', setForeignStockSells);
+    const unsubNgBuys = createListener<NigerianStockBuyRecord>('nigerian_stock_buys', setNigerianStockBuys);
+    const unsubNgSells = createListener<NigerianStockSellRecord>('nigerian_stock_sells', setNigerianStockSells);
+    const unsubEbook = createListener<EbookDcaRecord>('ebook_dca', setEbookDcaRecords);
+    const unsubCp = createListener<CommercialPaperRecord>('commercial_papers', setCommercialPaperRecords);
+    const unsubTb = createListener<TreasuryBillRecord>('treasury_bills', setTreasuryBillRecords);
+    const unsubMf = createListener<MutualFundRecord>('mutual_funds', setMutualFundRecords);
+    const unsubFgn = createListener<FgnBondRecord>('fgn_bonds', setFgnBondRecords);
+    const unsubGoldBuys = createListener<GoldEtfBuyRecord>('gold_etf_buys', setGoldEtfBuys);
+    const unsubGoldSells = createListener<GoldEtfSellRecord>('gold_etf_sells', setGoldEtfSells);
+    const unsubLocked = createListener<LockedSavingsRecord>('locked_savings', setLockedSavingsRecords);
+    const unsubDocs = createListener<AppDocument>('documents', setDocuments);
+
+    // Stop loading after initialization
+    const timer = setTimeout(() => {
+      setIsDataLoading(false);
+      setSyncStatus('synced');
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      unsubUser();
+      unsubUba();
+      unsubFsBuys();
+      unsubFsSells();
+      unsubNgBuys();
+      unsubNgSells();
+      unsubEbook();
+      unsubCp();
+      unsubTb();
+      unsubMf();
+      unsubFgn();
+      unsubGoldBuys();
+      unsubGoldSells();
+      unsubLocked();
+      unsubDocs();
+    };
+  }, [user]);
+
+  // Master Portfolio Aggregator (Exact financial calculation preserved)
   const summary: PortfolioSummary = useMemo(() => {
     const usdRate = settings.currentUsdExchangeRate || 1780.00;
 
@@ -242,7 +297,6 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const fsSellQty = foreignStockSells.reduce((acc, r) => acc + (r.qty || 0), 0);
     const fsNetQty = Math.max(0, fsBuyQty - fsSellQty);
     const fsCostNaira = foreignStockBuys.reduce((acc, r) => acc + (r.totalAmountNaira || 0), 0);
-    // Estimated holding value based on last price or $57 * current exchange rate
     const fsCurrentValueUsd = fsNetQty * 57.0;
     const fsCurrentValueNaira = fsCurrentValueUsd * usdRate;
     const fsRealizedProfitUsd = foreignStockSells.reduce((acc, r) => acc + (r.profitOrLossUsd || 0), 0);
@@ -253,7 +307,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const ngBuyQty = nigerianStockBuys.reduce((acc, r) => acc + (r.qty || 0), 0);
     const ngSellQty = nigerianStockSells.reduce((acc, r) => acc + (r.qty || 0), 0);
     const ngNetQty = Math.max(0, ngBuyQty - ngSellQty);
-    const ngCurrentValueNaira = ngNetQty * 20.50; // based on current unit price
+    const ngCurrentValueNaira = ngNetQty * 20.50;
     const ngCurrentValueUsd = ngCurrentValueNaira / usdRate;
     const ngRealizedProfitNaira = nigerianStockSells.reduce((acc, r) => acc + (r.profitOrLossNaira || 0), 0);
     const ngRealizedProfitUsd = nigerianStockSells.reduce((acc, r) => acc + (r.profitOrLossUsd || 0), 0);
@@ -289,7 +343,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const goldBuyQty = goldEtfBuys.reduce((acc, r) => acc + (r.qty || 0), 0);
     const goldSellQty = goldEtfSells.reduce((acc, r) => acc + (r.qty || 0), 0);
     const goldNetQty = Math.max(0, goldBuyQty - goldSellQty);
-    const goldCurrentValueUsd = goldNetQty * 63.13; // estimate
+    const goldCurrentValueUsd = goldNetQty * 63.13;
     const goldCurrentValueNaira = goldCurrentValueUsd * usdRate;
     const goldRealizedProfitUsd = goldEtfSells.reduce((acc, r) => acc + (r.profitOrLossUsd || 0), 0);
     const goldRealizedProfitNaira = goldEtfSells.reduce((acc, r) => acc + (r.profitOrLossNaira || 0), 0);
@@ -407,232 +461,194 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     goldEtfBuys, goldEtfSells, lockedSavingsRecords
   ]);
 
-  // Mutators
-  const addUbaDca = (record: Omit<UbaDcaRecord, 'id' | 'createdAt'>) => {
-    const newRecord: UbaDcaRecord = {
-      ...record,
-      id: `uba-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setUbaDcaRecords(prev => [newRecord, ...prev]);
+  // Firestore-backed Mutators
+  const addUbaDca = async (record: Omit<UbaDcaRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `uba-${Date.now()}`;
+    await saveUserRecord(user.uid, 'uba_dca', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const deleteUbaDca = (id: string) => {
-    setUbaDcaRecords(prev => prev.filter(r => r.id !== id));
+  const deleteUbaDca = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'uba_dca', id);
   };
 
-  const addForeignStockBuy = (record: Omit<ForeignStockBuyRecord, 'id' | 'createdAt'>) => {
-    const newRecord: ForeignStockBuyRecord = {
-      ...record,
-      id: `fs-buy-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setForeignStockBuys(prev => [...prev, newRecord]);
+  const addForeignStockBuy = async (record: Omit<ForeignStockBuyRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `fs-buy-${Date.now()}`;
+    await saveUserRecord(user.uid, 'foreign_stock_buys', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const addForeignStockSell = (record: Omit<ForeignStockSellRecord, 'id' | 'createdAt'>) => {
-    const newRecord: ForeignStockSellRecord = {
-      ...record,
-      id: `fs-sell-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setForeignStockSells(prev => [...prev, newRecord]);
+  const addForeignStockSell = async (record: Omit<ForeignStockSellRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `fs-sell-${Date.now()}`;
+    await saveUserRecord(user.uid, 'foreign_stock_sells', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const deleteForeignStock = (id: string, type: 'buy' | 'sell') => {
-    if (type === 'buy') setForeignStockBuys(prev => prev.filter(r => r.id !== id));
-    else setForeignStockSells(prev => prev.filter(r => r.id !== id));
+  const deleteForeignStock = async (id: string, type: 'buy' | 'sell') => {
+    if (!user) return;
+    const coll = type === 'buy' ? 'foreign_stock_buys' : 'foreign_stock_sells';
+    await deleteUserRecord(user.uid, coll, id);
   };
 
-  const addNigerianStockBuy = (record: Omit<NigerianStockBuyRecord, 'id' | 'createdAt'>) => {
-    const newRecord: NigerianStockBuyRecord = {
-      ...record,
-      id: `ng-buy-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setNigerianStockBuys(prev => [...prev, newRecord]);
+  const addNigerianStockBuy = async (record: Omit<NigerianStockBuyRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `ng-buy-${Date.now()}`;
+    await saveUserRecord(user.uid, 'nigerian_stock_buys', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const addNigerianStockSell = (record: Omit<NigerianStockSellRecord, 'id' | 'createdAt'>) => {
-    const newRecord: NigerianStockSellRecord = {
-      ...record,
-      id: `ng-sell-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setNigerianStockSells(prev => [...prev, newRecord]);
+  const addNigerianStockSell = async (record: Omit<NigerianStockSellRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `ng-sell-${Date.now()}`;
+    await saveUserRecord(user.uid, 'nigerian_stock_sells', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const deleteNigerianStock = (id: string, type: 'buy' | 'sell') => {
-    if (type === 'buy') setNigerianStockBuys(prev => prev.filter(r => r.id !== id));
-    else setNigerianStockSells(prev => prev.filter(r => r.id !== id));
+  const deleteNigerianStock = async (id: string, type: 'buy' | 'sell') => {
+    if (!user) return;
+    const coll = type === 'buy' ? 'nigerian_stock_buys' : 'nigerian_stock_sells';
+    await deleteUserRecord(user.uid, coll, id);
   };
 
-  const addEbookDca = (record: Omit<EbookDcaRecord, 'id' | 'createdAt'>) => {
-    const newRecord: EbookDcaRecord = {
-      ...record,
-      id: `ebook-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setEbookDcaRecords(prev => [...prev, newRecord]);
+  const addEbookDca = async (record: Omit<EbookDcaRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `ebook-${Date.now()}`;
+    await saveUserRecord(user.uid, 'ebook_dca', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const deleteEbookDca = (id: string) => {
-    setEbookDcaRecords(prev => prev.filter(r => r.id !== id));
+  const deleteEbookDca = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'ebook_dca', id);
   };
 
-  const addCommercialPaper = (record: Omit<CommercialPaperRecord, 'id' | 'createdAt'>) => {
-    const newRecord: CommercialPaperRecord = {
-      ...record,
-      id: `cp-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setCommercialPaperRecords(prev => [...prev, newRecord]);
+  const addCommercialPaper = async (record: Omit<CommercialPaperRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `cp-${Date.now()}`;
+    await saveUserRecord(user.uid, 'commercial_papers', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const updateCommercialPaper = (id: string, updates: Partial<CommercialPaperRecord>) => {
-    setCommercialPaperRecords(prev => prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+  const updateCommercialPaper = async (id: string, updates: Partial<CommercialPaperRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'commercial_papers', id, updates);
   };
 
-  const deleteCommercialPaper = (id: string) => {
-    setCommercialPaperRecords(prev => prev.filter(r => r.id !== id));
+  const deleteCommercialPaper = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'commercial_papers', id);
   };
 
-  const addTreasuryBill = (record: Omit<TreasuryBillRecord, 'id' | 'createdAt'>) => {
-    const newRecord: TreasuryBillRecord = {
-      ...record,
-      id: `tb-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setTreasuryBillRecords(prev => [...prev, newRecord]);
+  const addTreasuryBill = async (record: Omit<TreasuryBillRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `tb-${Date.now()}`;
+    await saveUserRecord(user.uid, 'treasury_bills', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const updateTreasuryBill = (id: string, updates: Partial<TreasuryBillRecord>) => {
-    setTreasuryBillRecords(prev => prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+  const updateTreasuryBill = async (id: string, updates: Partial<TreasuryBillRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'treasury_bills', id, updates);
   };
 
-  const deleteTreasuryBill = (id: string) => {
-    setTreasuryBillRecords(prev => prev.filter(r => r.id !== id));
+  const deleteTreasuryBill = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'treasury_bills', id);
   };
 
-  const addMutualFund = (record: Omit<MutualFundRecord, 'id' | 'createdAt'>) => {
-    const newRecord: MutualFundRecord = {
-      ...record,
-      id: `mf-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setMutualFundRecords(prev => [...prev, newRecord]);
+  const addMutualFund = async (record: Omit<MutualFundRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `mf-${Date.now()}`;
+    await saveUserRecord(user.uid, 'mutual_funds', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const updateMutualFund = (id: string, updates: Partial<MutualFundRecord>) => {
-    setMutualFundRecords(prev => prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+  const updateMutualFund = async (id: string, updates: Partial<MutualFundRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'mutual_funds', id, updates);
   };
 
-  const deleteMutualFund = (id: string) => {
-    setMutualFundRecords(prev => prev.filter(r => r.id !== id));
+  const deleteMutualFund = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'mutual_funds', id);
   };
 
-  const addFgnBond = (record: Omit<FgnBondRecord, 'id' | 'createdAt'>) => {
-    const newRecord: FgnBondRecord = {
-      ...record,
-      id: `fgn-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setFgnBondRecords(prev => [...prev, newRecord]);
+  const addFgnBond = async (record: Omit<FgnBondRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `fgn-${Date.now()}`;
+    await saveUserRecord(user.uid, 'fgn_bonds', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const deleteFgnBond = (id: string) => {
-    setFgnBondRecords(prev => prev.filter(r => r.id !== id));
+  const deleteFgnBond = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'fgn_bonds', id);
   };
 
-  const addGoldEtfBuy = (record: Omit<GoldEtfBuyRecord, 'id' | 'createdAt'>) => {
-    const newRecord: GoldEtfBuyRecord = {
-      ...record,
-      id: `gold-buy-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setGoldEtfBuys(prev => [...prev, newRecord]);
+  const addGoldEtfBuy = async (record: Omit<GoldEtfBuyRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `gold-buy-${Date.now()}`;
+    await saveUserRecord(user.uid, 'gold_etf_buys', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const addGoldEtfSell = (record: Omit<GoldEtfSellRecord, 'id' | 'createdAt'>) => {
-    const newRecord: GoldEtfSellRecord = {
-      ...record,
-      id: `gold-sell-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setGoldEtfSells(prev => [...prev, newRecord]);
+  const addGoldEtfSell = async (record: Omit<GoldEtfSellRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `gold-sell-${Date.now()}`;
+    await saveUserRecord(user.uid, 'gold_etf_sells', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const deleteGoldEtf = (id: string, type: 'buy' | 'sell') => {
-    if (type === 'buy') setGoldEtfBuys(prev => prev.filter(r => r.id !== id));
-    else setGoldEtfSells(prev => prev.filter(r => r.id !== id));
+  const deleteGoldEtf = async (id: string, type: 'buy' | 'sell') => {
+    if (!user) return;
+    const coll = type === 'buy' ? 'gold_etf_buys' : 'gold_etf_sells';
+    await deleteUserRecord(user.uid, coll, id);
   };
 
-  const addLockedSavings = (record: Omit<LockedSavingsRecord, 'id' | 'createdAt'>) => {
-    const newRecord: LockedSavingsRecord = {
-      ...record,
-      id: `lock-${Date.now()}`,
-      createdAt: new Date().toISOString()
-    };
-    setLockedSavingsRecords(prev => [...prev, newRecord]);
+  const addLockedSavings = async (record: Omit<LockedSavingsRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `lock-${Date.now()}`;
+    await saveUserRecord(user.uid, 'locked_savings', id, { ...record, createdAt: new Date().toISOString() });
   };
 
-  const updateLockedSavings = (id: string, updates: Partial<LockedSavingsRecord>) => {
-    setLockedSavingsRecords(prev => prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+  const updateLockedSavings = async (id: string, updates: Partial<LockedSavingsRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'locked_savings', id, updates);
   };
 
-  const deleteLockedSavings = (id: string) => {
-    setLockedSavingsRecords(prev => prev.filter(r => r.id !== id));
+  const deleteLockedSavings = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'locked_savings', id);
   };
 
-  const addDocument = (doc: Omit<AppDocument, 'id' | 'uploadDate'>) => {
-    const newDoc: AppDocument = {
-      ...doc,
-      id: `doc-${Date.now()}`,
+  const addDocument = async (docData: Omit<AppDocument, 'id' | 'uploadDate'>) => {
+    if (!user) return;
+    const id = `doc-${Date.now()}`;
+    await saveUserRecord(user.uid, 'documents', id, {
+      ...docData,
       uploadDate: new Date().toISOString().split('T')[0]
-    };
-    setDocuments(prev => [newDoc, ...prev]);
+    });
   };
 
-  const deleteDocument = (id: string) => {
-    setDocuments(prev => prev.filter(d => d.id !== id));
+  const deleteDocument = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'documents', id);
   };
 
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+  const updateSettings = async (newSettings: Partial<AppSettings>) => {
+    if (!user) return;
+    const merged = { ...settings, ...newSettings };
+    setSettings(merged);
+    await saveUserSettings(user.uid, merged);
   };
 
   const resetToMasterWorkbook = () => {
-    setSettings(initialAppSettings);
-    setUbaDcaRecords(initialUbaDcaRecords);
-    setForeignStockBuys(initialForeignStockBuys);
-    setForeignStockSells(initialForeignStockSells);
-    setNigerianStockBuys(initialNigerianStockBuys);
-    setNigerianStockSells(initialNigerianStockSells);
-    setEbookDcaRecords(initialEbookDcaRecords);
-    setCommercialPaperRecords(initialCommercialPaperRecords);
-    setTreasuryBillRecords(initialTreasuryBillRecords);
-    setMutualFundRecords(initialMutualFundRecords);
-    setFgnBondRecords(initialFgnBondRecords);
-    setGoldEtfBuys(initialGoldEtfBuys);
-    setGoldEtfSells(initialGoldEtfSells);
-    setLockedSavingsRecords(initialLockedSavingsRecords);
-    setDocuments(initialDocuments);
+    seedInitialWorkbookToUserFirestore();
   };
 
-  const importParsedData = (data: any) => {
-    if (data.ubaDcaRecords) setUbaDcaRecords(data.ubaDcaRecords);
-    if (data.foreignStockBuys) setForeignStockBuys(data.foreignStockBuys);
-    if (data.foreignStockSells) setForeignStockSells(data.foreignStockSells);
-    if (data.nigerianStockBuys) setNigerianStockBuys(data.nigerianStockBuys);
-    if (data.nigerianStockSells) setNigerianStockSells(data.nigerianStockSells);
-    if (data.ebookDcaRecords) setEbookDcaRecords(data.ebookDcaRecords);
-    if (data.commercialPaperRecords) setCommercialPaperRecords(data.commercialPaperRecords);
-    if (data.treasuryBillRecords) setTreasuryBillRecords(data.treasuryBillRecords);
-    if (data.mutualFundRecords) setMutualFundRecords(data.mutualFundRecords);
-    if (data.fgnBondRecords) setFgnBondRecords(data.fgnBondRecords);
-    if (data.goldEtfBuys) setGoldEtfBuys(data.goldEtfBuys);
-    if (data.goldEtfSells) setGoldEtfSells(data.goldEtfSells);
-    if (data.lockedSavingsRecords) setLockedSavingsRecords(data.lockedSavingsRecords);
+  const importParsedData = async (importedData: any) => {
+    if (!user) return;
+    setSyncStatus('syncing');
+    try {
+      await bulkImportToFirestore(user.uid, importedData);
+      setSyncStatus('synced');
+    } catch (e: any) {
+      console.error('Error during bulk import:', e);
+      setSyncStatus('error');
+      setSyncError(e.message || 'Import failed');
+    }
   };
 
   return (
@@ -644,6 +660,9 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setSelectedCategory,
         searchQuery,
         setSearchQuery,
+        isDataLoading,
+        syncStatus,
+        syncError,
         ubaDcaRecords,
         foreignStockBuys,
         foreignStockSells,
@@ -658,6 +677,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         goldEtfSells,
         lockedSavingsRecords,
         documents,
+        documentRecords: documents,
         settings,
         summary,
         addUbaDca,
@@ -690,6 +710,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addDocument,
         deleteDocument,
         updateSettings,
+        seedInitialWorkbookToUserFirestore,
         resetToMasterWorkbook,
         resetToWorkbookDefaults: resetToMasterWorkbook,
         importParsedData

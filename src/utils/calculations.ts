@@ -101,8 +101,8 @@ export const calculateFgnBondQuarterlyInterest = (amountInvestedNaira: number, i
 };
 
 // FGN Bond Dynamic Schedule Resolver
-export const getFgnBondPaymentMonths = (investmentMonth: string): string[] => {
-  const monthUpper = investmentMonth.toUpperCase().trim();
+export const getFgnBondPaymentMonths = (investmentMonth?: string): string[] => {
+  const monthUpper = (investmentMonth || 'FEBRUARY').toUpperCase().trim();
   const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
   const monthMap: Record<string, string[]> = {
     'FEBRUARY': ['MAY', 'AUGUST', 'NOVEMBER', 'FEBRUARY'],
