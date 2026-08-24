@@ -1,58 +1,131 @@
 import React, { useState, useMemo } from 'react';
 import { useWealth } from '../context/WealthContext';
 import { CryptoInvestmentRecord } from '../types';
-import { formatFinancialValue, formatPercent } from '../utils/calculations';
+import { formatNaira, formatUSD, formatDate } from '../utils/calculations';
 import { 
-  Coins, 
   Plus, 
-  Search, 
-  TrendingUp, 
-  TrendingDown, 
   Trash2, 
   Edit2, 
-  DollarSign, 
-  ArrowUpRight, 
-  Wallet,
-  Building,
-  CheckCircle2,
-  X
+  Coins, 
+  Search, 
+  X, 
+  Check, 
+  Calculator
 } from 'lucide-react';
 
+const COMMON_EXCHANGES = [
+  'Binance',
+  'Luno',
+  'Remitano',
+  'Bybit',
+  'KuCoin',
+  'Coinbase',
+  'OKX',
+  'Kraken',
+  'Trust Wallet',
+  'Ledger'
+];
+
 export const CryptoInvestmentsScreen: React.FC = () => {
-  const { cryptoInvestments, addCryptoInvestment, updateCryptoInvestment, deleteCryptoInvestment, settings, summary } = useWealth();
+  const { 
+    cryptoInvestments, 
+    addCryptoInvestment, 
+    updateCryptoInvestment, 
+    deleteCryptoInvestment, 
+    settings 
+  } = useWealth();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCurrencyFilter, setSelectedCurrencyFilter] = useState<'ALL' | 'USD' | 'NGN'>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<CryptoInvestmentRecord | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
     cryptoName: '',
-    ticker: '',
+    ticker: 'BTC',
     investmentDate: new Date().toISOString().split('T')[0],
-    quantity: '',
-    purchasePrice: '',
-    purchaseCurrency: 'USD' as 'USD' | 'NGN',
-    exchange: '',
-    transactionFee: '',
+    quantity: '0.05',
+    unitPrice: '60000',
+    dollarRate: (settings.currentUsdExchangeRate || 1600).toString(),
+    exchange: 'Binance',
+    customExchange: '',
     currentPrice: '',
     notes: ''
   });
 
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Totals calculations across crypto investment buy records
+  const totalBuyQty = useMemo(() => {
+    return cryptoInvestments.reduce((acc, r) => acc + (r.qty ?? r.quantity ?? 0), 0);
+  }, [cryptoInvestments]);
+
+  const totalBuyAmountUsd = useMemo(() => {
+    return cryptoInvestments.reduce((acc, r) => {
+      if (typeof r.totalAmountUsd === 'number') return acc + r.totalAmountUsd;
+      if (typeof r.totalCostUsd === 'number') return acc + r.totalCostUsd;
+      const unit = r.unitPriceUsd ?? r.purchasePrice ?? 0;
+      const q = r.qty ?? r.quantity ?? 0;
+      return acc + (unit * q);
+    }, 0);
+  }, [cryptoInvestments]);
+
+  const totalBuyAmountNaira = useMemo(() => {
+    return cryptoInvestments.reduce((acc, r) => {
+      if (typeof r.totalAmountNaira === 'number') return acc + r.totalAmountNaira;
+      if (typeof r.totalCostNaira === 'number') return acc + r.totalCostNaira;
+      const unit = r.unitPriceUsd ?? r.purchasePrice ?? 0;
+      const q = r.qty ?? r.quantity ?? 0;
+      const rate = r.dollarRateNaira ?? (settings.currentUsdExchangeRate || 1600);
+      return acc + (unit * q * rate);
+    }, 0);
+  }, [cryptoInvestments, settings.currentUsdExchangeRate]);
+
+  const avgBuyPrice = useMemo(() => {
+    if (cryptoInvestments.length === 0) return 0;
+    const sumUnitPrice = cryptoInvestments.reduce((acc, r) => acc + (r.unitPriceUsd ?? r.purchasePrice ?? 0), 0);
+    return sumUnitPrice / cryptoInvestments.length;
+  }, [cryptoInvestments]);
+
+  const totalCurrentValuationUsd = useMemo(() => {
+    return cryptoInvestments.reduce((acc, r) => {
+      const q = r.qty ?? r.quantity ?? 0;
+      const cur = r.currentPrice ?? r.unitPriceUsd ?? r.purchasePrice ?? 0;
+      return acc + (q * cur);
+    }, 0);
+  }, [cryptoInvestments]);
+
+  const totalCurrentValuationNaira = useMemo(() => {
+    const usdRate = settings.currentUsdExchangeRate || 1600;
+    return totalCurrentValuationUsd * usdRate;
+  }, [totalCurrentValuationUsd, settings.currentUsdExchangeRate]);
+
+  const totalUnrealizedPLUsd = totalCurrentValuationUsd - totalBuyAmountUsd;
+  const totalUnrealizedPLNaira = totalCurrentValuationNaira - totalBuyAmountNaira;
+
+  // Filtered List
+  const filteredRecords = useMemo(() => {
+    return cryptoInvestments.filter(rec => {
+      const q = searchQuery.toLowerCase();
+      const nameMatch = (rec.cryptoName || '').toLowerCase().includes(q);
+      const tickerMatch = (rec.ticker || '').toLowerCase().includes(q);
+      const exchangeMatch = ((rec.exchange || rec.exchangeOrPlatform || '')).toLowerCase().includes(q);
+      const notesMatch = (rec.notes || '').toLowerCase().includes(q);
+      return nameMatch || tickerMatch || exchangeMatch || notesMatch;
+    });
+  }, [cryptoInvestments, searchQuery]);
+
   const handleOpenAdd = () => {
     setEditingRecord(null);
     setFormData({
-      cryptoName: '',
-      ticker: '',
+      cryptoName: 'Bitcoin',
+      ticker: 'BTC',
       investmentDate: new Date().toISOString().split('T')[0],
       quantity: '',
-      purchasePrice: '',
-      purchaseCurrency: 'USD',
-      exchange: '',
-      transactionFee: '0',
+      unitPrice: '',
+      dollarRate: (settings.currentUsdExchangeRate || 1600).toString(),
+      exchange: 'Binance',
+      customExchange: '',
       currentPrice: '',
       notes: ''
     });
@@ -62,16 +135,19 @@ export const CryptoInvestmentsScreen: React.FC = () => {
 
   const handleOpenEdit = (rec: CryptoInvestmentRecord) => {
     setEditingRecord(rec);
+    const existingExchange = rec.exchange || rec.exchangeOrPlatform || '';
+    const isPreset = COMMON_EXCHANGES.includes(existingExchange);
+
     setFormData({
       cryptoName: rec.cryptoName || '',
-      ticker: rec.ticker || '',
-      investmentDate: rec.investmentDate || new Date().toISOString().split('T')[0],
-      quantity: String(rec.quantity || ''),
-      purchasePrice: String(rec.purchasePrice || ''),
-      purchaseCurrency: rec.purchaseCurrency || 'USD',
-      exchange: rec.exchange || '',
-      transactionFee: String(rec.transactionFee || 0),
-      currentPrice: String(rec.currentPrice || rec.purchasePrice || ''),
+      ticker: rec.ticker || 'BTC',
+      investmentDate: rec.investmentDate || rec.date || new Date().toISOString().split('T')[0],
+      quantity: String(rec.qty ?? rec.quantity ?? ''),
+      unitPrice: String(rec.unitPriceUsd ?? rec.purchasePrice ?? ''),
+      dollarRate: String(rec.dollarRateNaira ?? settings.currentUsdExchangeRate ?? 1600),
+      exchange: isPreset ? existingExchange : (existingExchange ? 'Other' : 'Binance'),
+      customExchange: isPreset ? '' : existingExchange,
+      currentPrice: String(rec.currentPrice ?? rec.unitPriceUsd ?? rec.purchasePrice ?? ''),
       notes: rec.notes || ''
     });
     setFormError(null);
@@ -80,39 +156,64 @@ export const CryptoInvestmentsScreen: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.cryptoName.trim() || !formData.ticker.trim()) {
-      setFormError('Please enter a Cryptocurrency Name and Ticker Symbol.');
+    if (!formData.cryptoName.trim() && !formData.ticker.trim()) {
+      setFormError('Please enter a cryptocurrency name or ticker symbol.');
       return;
     }
+
     const qty = parseFloat(formData.quantity);
-    const buyPrice = parseFloat(formData.purchasePrice);
-    const fee = parseFloat(formData.transactionFee) || 0;
-    const curPrice = parseFloat(formData.currentPrice) || buyPrice;
+    const unitPrice = parseFloat(formData.unitPrice);
+    const dollarRate = parseFloat(formData.dollarRate) || settings.currentUsdExchangeRate || 1600;
+    const curPrice = parseFloat(formData.currentPrice) || unitPrice;
 
-    if (isNaN(qty) || qty <= 0 || isNaN(buyPrice) || buyPrice <= 0) {
-      setFormError('Please enter valid positive numbers for Quantity and Purchase Price.');
+    if (isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice <= 0) {
+      setFormError('Please enter valid positive numbers for Quantity and Unit Price ($).');
       return;
     }
 
-    const totalCost = (qty * buyPrice) + fee;
-    const currentValue = qty * curPrice;
-    const unrealizedGainLoss = currentValue - totalCost;
-    const returnOnInvestmentPct = totalCost > 0 ? (unrealizedGainLoss / totalCost) * 100 : 0;
+    const finalExchange = formData.exchange === 'Other' 
+      ? (formData.customExchange.trim() || 'Not specified')
+      : (formData.exchange.trim() || 'Not specified');
+
+    const amountUsd = unitPrice * qty;
+    const totalAmountUsd = amountUsd;
+    const totalAmountNaira = totalAmountUsd * dollarRate;
+    const currentValueUsd = qty * curPrice;
+    const currentValueNaira = currentValueUsd * dollarRate;
+    const unrealizedPLUsd = currentValueUsd - totalAmountUsd;
+    const unrealizedPLNaira = currentValueNaira - totalAmountNaira;
+    const roiPct = totalAmountUsd > 0 ? (unrealizedPLUsd / totalAmountUsd) * 100 : 0;
 
     const payload = {
-      cryptoName: formData.cryptoName.trim(),
+      cryptoName: formData.cryptoName.trim() || formData.ticker.trim(),
       ticker: formData.ticker.trim().toUpperCase(),
       investmentDate: formData.investmentDate,
+      date: formData.investmentDate,
+      unitPriceUsd: unitPrice,
+      purchasePrice: unitPrice,
+      purchaseCurrency: 'USD' as const,
+      dollarRateNaira: dollarRate,
+      qty,
       quantity: qty,
-      purchasePrice: buyPrice,
-      purchaseCurrency: formData.purchaseCurrency,
-      exchange: formData.exchange.trim() || 'Cold Wallet / Exchange',
-      transactionFee: fee,
-      totalCost,
+      amountUsd,
+      totalAmountUsd,
+      totalAmountNaira,
+      exchange: finalExchange,
+      exchangeOrPlatform: finalExchange,
+      transactionFee: 0,
+      totalCost: totalAmountUsd,
+      totalCostUsd: totalAmountUsd,
+      totalCostNaira: totalAmountNaira,
       currentPrice: curPrice,
-      currentValue,
-      unrealizedGainLoss,
-      returnOnInvestmentPct,
+      currentValue: currentValueUsd,
+      currentValueUsd,
+      currentValueNaira,
+      unrealizedProfitLoss: unrealizedPLUsd,
+      unrealizedGainLoss: unrealizedPLUsd,
+      unrealizedProfitLossUsd: unrealizedPLUsd,
+      unrealizedProfitLossNaira: unrealizedPLNaira,
+      roiPercentage: roiPct,
+      returnOnInvestmentPct: roiPct,
       notes: formData.notes.trim()
     };
 
@@ -124,256 +225,158 @@ export const CryptoInvestmentsScreen: React.FC = () => {
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      setFormError(err.message || 'Failed to save cryptocurrency holding.');
+      setFormError(err.message || 'Failed to save crypto investment record.');
     }
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to remove ${name} from your crypto holdings?`)) {
+    if (window.confirm(`Are you sure you want to delete this crypto investment record (${name})?`)) {
       await deleteCryptoInvestment(id);
     }
   };
 
-  // Filtered List
-  const filteredRecords = useMemo(() => {
-    return cryptoInvestments.filter(rec => {
-      const matchesQuery = 
-        (rec.cryptoName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (rec.ticker || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (rec.exchangeOrPlatform || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (rec.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesCurrency = selectedCurrencyFilter === 'ALL' || rec.purchaseCurrency === selectedCurrencyFilter;
-      return matchesQuery && matchesCurrency;
-    });
-  }, [cryptoInvestments, searchQuery, selectedCurrencyFilter]);
-
-  // Aggregated screen metrics
-  const screenMetrics = useMemo(() => {
-    const usdRate = settings?.currentUsdExchangeRate || 1780;
-    let totalInvestedNaira = 0;
-    let totalCurrentValueNaira = 0;
-
-    cryptoInvestments.forEach(rec => {
-      const cost = rec.purchaseCurrency === 'NGN' ? rec.totalCost : rec.totalCost * usdRate;
-      const value = rec.purchaseCurrency === 'NGN' ? rec.currentValue : rec.currentValue * usdRate;
-      totalInvestedNaira += cost;
-      totalCurrentValueNaira += value;
-    });
-
-    const totalUnrealizedNaira = totalCurrentValueNaira - totalInvestedNaira;
-    const totalRoi = totalInvestedNaira > 0 ? (totalUnrealizedNaira / totalInvestedNaira) * 100 : 0;
-
-    // Largest asset
-    let topHolding: CryptoInvestmentRecord | null = null;
-    let maxVal = -1;
-    cryptoInvestments.forEach(rec => {
-      const val = rec.purchaseCurrency === 'NGN' ? rec.currentValue / usdRate : rec.currentValue;
-      if (val > maxVal) {
-        maxVal = val;
-        topHolding = rec;
-      }
-    });
-
-    return {
-      totalInvestedNaira,
-      totalCurrentValueNaira,
-      totalUnrealizedNaira,
-      totalRoi,
-      topHolding,
-      totalHoldingsCount: cryptoInvestments.length
-    };
-  }, [cryptoInvestments, settings?.currentUsdExchangeRate]);
+  // Preview Calculations in Modal
+  const previewQty = parseFloat(formData.quantity) || 0;
+  const previewUnitPrice = parseFloat(formData.unitPrice) || 0;
+  const previewDollarRate = parseFloat(formData.dollarRate) || settings.currentUsdExchangeRate || 1600;
+  const previewAmountUsd = previewUnitPrice * previewQty;
+  const previewTotalUsd = previewAmountUsd;
+  const previewTotalNaira = previewTotalUsd * previewDollarRate;
 
   return (
     <div className="space-y-6">
-      {/* Category Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-6 rounded transition-colors">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#f59e0b]/10 text-[#b45309] dark:bg-[#f59e0b]/20 dark:text-[#fbbf24] border border-[#f59e0b]/30">
-              CATEGORY 1 &middot; INVESTMENT ASSET
-            </span>
+      {/* Header Cards — Reusing Gold ETF Header Card Structure */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-[#ffffff] border border-[#e3e2e1] p-4 rounded">
+          <div className="text-[11px] font-semibold text-[#b45309] uppercase tracking-wider">AVG BUY PRICE ($)</div>
+          <div className="text-xl font-bold font-mono text-[#1a1c1c] mt-1">${avgBuyPrice.toFixed(2)}</div>
+          <div className="text-xs text-[#747878] mt-0.5">BTC &middot; ETH &middot; SOL &middot; Spot</div>
+        </div>
+
+        <div className="bg-[#ffffff] border border-[#e3e2e1] p-4 rounded">
+          <div className="text-[11px] font-semibold text-[#747878] uppercase tracking-wider">TOTAL CRYPTO BOUGHT</div>
+          <div className="text-xl font-bold font-mono text-[#1a1c1c] mt-1">{formatUSD(totalBuyAmountUsd)}</div>
+          <div className="text-xs font-mono text-[#747878] mt-0.5">{formatNaira(totalBuyAmountNaira)}</div>
+        </div>
+
+        <div className="bg-[#ffffff] border border-[#e3e2e1] p-4 rounded">
+          <div className="text-[11px] font-semibold text-[#747878] uppercase tracking-wider">NET ACTIVE UNITS</div>
+          <div className="text-xl font-bold font-mono text-[#1a1c1c] mt-1">{totalBuyQty.toLocaleString(undefined, { maximumFractionDigits: 4 })} Units</div>
+          <div className="text-xs text-[#747878] mt-0.5">{cryptoInvestments.length} recorded positions</div>
+        </div>
+
+        <div className="bg-[#ffffff] border border-[#e3e2e1] p-4 rounded">
+          <div className="text-[11px] font-semibold text-[#1b6b51] uppercase tracking-wider">UNREALIZED PROFIT/LOSS</div>
+          <div className={`text-xl font-bold font-mono mt-1 ${totalUnrealizedPLUsd >= 0 ? 'text-[#1b6b51]' : 'text-[#ba1a1a]'}`}>
+            {totalUnrealizedPLUsd >= 0 ? '+' : ''}{formatUSD(totalUnrealizedPLUsd)}
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2] mt-1.5 flex items-center gap-2">
-            <Coins className="w-6 h-6 text-[#f59e0b]" />
-            <span>Crypto Investments (Long-Term Holdings)</span>
-          </h1>
-          <p className="text-xs sm:text-[13px] text-[#747878] dark:text-[#8c9290] mt-1">
-            Spot cryptocurrency balances, hardware wallet custody, cost basis, live valuation, and ROI tracking.
-          </p>
+          <div className="text-xs font-mono text-[#1b6b51] mt-0.5">
+            {totalUnrealizedPLNaira >= 0 ? '+' : ''}{formatNaira(totalUnrealizedPLNaira)}
+          </div>
+        </div>
+      </div>
+
+      {/* Action and Search Controls Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-[#e3e2e1] pb-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#747878]" />
+          <input
+            type="text"
+            placeholder="Search crypto, ticker, exchange..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#ffffff] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
+          />
         </div>
 
         <button
           onClick={handleOpenAdd}
-          className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-4 py-2.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-xs transition-colors self-start sm:self-auto"
+          className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3.5 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Crypto Asset</span>
+          <Plus className="w-3.5 h-3.5" />
+          <span>New Crypto Investment</span>
         </button>
       </div>
 
-      {/* High-Level Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-5 rounded transition-colors">
-          <div className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase tracking-wider">TOTAL CRYPTO VALUATION</div>
-          <div className="text-xl sm:text-2xl font-bold font-mono text-[#1a1c1c] dark:text-[#e1e3e2] mt-1">
-            {formatFinancialValue(screenMetrics.totalCurrentValueNaira, settings)}
-          </div>
-          <div className="text-xs text-[#747878] dark:text-[#8c9290] mt-1">
-            {screenMetrics.totalHoldingsCount} active asset {screenMetrics.totalHoldingsCount === 1 ? 'position' : 'positions'}
-          </div>
+      {/* BUY TABLE — Exactly Reusing Gold ETF Buy Records Table Design */}
+      <div className="bg-[#ffffff] border border-[#e3e2e1] rounded overflow-hidden">
+        <div className="p-3 bg-[#f4f3f2] border-b border-[#e3e2e1] flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#1a1c1c]">Crypto Investment &middot; Buy Records</span>
+          <span className="text-xs font-mono text-[#747878]">Total Buy: {formatUSD(totalBuyAmountUsd)} / {formatNaira(totalBuyAmountNaira)}</span>
         </div>
-
-        <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-5 rounded transition-colors">
-          <div className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase tracking-wider">TOTAL CAPITAL INVESTED</div>
-          <div className="text-xl sm:text-2xl font-bold font-mono text-[#1a1c1c] dark:text-[#e1e3e2] mt-1">
-            {formatFinancialValue(screenMetrics.totalInvestedNaira, settings)}
-          </div>
-          <div className="text-xs text-[#747878] dark:text-[#8c9290] mt-1">
-            Cumulative purchase cost + fees
-          </div>
-        </div>
-
-        <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-5 rounded transition-colors">
-          <div className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase tracking-wider">UNREALIZED PROFIT / LOSS</div>
-          <div className={`text-xl sm:text-2xl font-bold font-mono mt-1 ${screenMetrics.totalUnrealizedNaira >= 0 ? 'text-[#1b6b51] dark:text-[#60d3a7]' : 'text-[#ba1a1a] dark:text-[#ff897d]'}`}>
-            {screenMetrics.totalUnrealizedNaira >= 0 ? '+' : ''}{formatFinancialValue(screenMetrics.totalUnrealizedNaira, settings)}
-          </div>
-          <div className="text-xs font-semibold mt-1">
-            <span className={screenMetrics.totalRoi >= 0 ? 'text-[#1b6b51] dark:text-[#60d3a7]' : 'text-[#ba1a1a] dark:text-[#ff897d]'}>
-              {screenMetrics.totalRoi >= 0 ? '+' : ''}{formatPercent(screenMetrics.totalRoi)} overall ROI
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-5 rounded transition-colors">
-          <div className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase tracking-wider">PRIMARY CRYPTO ASSET</div>
-          <div className="text-xl sm:text-2xl font-bold font-mono text-[#1a1c1c] dark:text-[#e1e3e2] mt-1 truncate">
-            {screenMetrics.topHolding ? `${screenMetrics.topHolding.ticker} (${screenMetrics.topHolding.cryptoName})` : 'None'}
-          </div>
-          <div className="text-xs text-[#747878] dark:text-[#8c9290] mt-1">
-            {screenMetrics.topHolding ? `Valued at ${screenMetrics.topHolding.purchaseCurrency === 'USD' ? '$' : '₦'}${screenMetrics.topHolding.currentValue.toLocaleString()}` : 'No records registered'}
-          </div>
-        </div>
-      </div>
-
-      {/* Table Controls & Filter Bar */}
-      <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-4 rounded flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#747878] dark:text-[#8c9290]" />
-          <input
-            type="text"
-            placeholder="Search coin, ticker, exchange, notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290]">Currency:</span>
-          {(['ALL', 'USD', 'NGN'] as const).map(curr => (
-            <button
-              key={curr}
-              onClick={() => setSelectedCurrencyFilter(curr)}
-              className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors cursor-pointer ${
-                selectedCurrencyFilter === curr
-                  ? 'bg-[#1a1c1c] text-[#faf9f8] dark:bg-[#e1e3e2] dark:text-[#111313]'
-                  : 'bg-[#faf9f8] dark:bg-[#222625] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130]'
-              }`}
-            >
-              {curr}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Crypto Holdings Table */}
-      <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded overflow-hidden transition-colors shadow-xs">
-        <div className="p-4 bg-[#f4f3f2] dark:bg-[#222625] border-b border-[#e3e2e1] dark:border-[#2d3130] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Coins className="w-4 h-4 text-[#f59e0b]" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1a1c1c] dark:text-[#e1e3e2]">
-              Cryptocurrency Portfolio Ledger ({filteredRecords.length})
-            </h3>
-          </div>
-          <span className="text-xs font-mono font-semibold text-[#747878] dark:text-[#8c9290]">
-            Audited Spot Positions
-          </span>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#faf9f8] dark:bg-[#191c1b] text-[#444748] dark:text-[#c2c7c5] border-b border-[#e3e2e1] dark:border-[#2d3130] text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="bg-[#faf9f8] text-[#444748] border-b border-[#e3e2e1] text-[11px] font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3 px-4">ASSET / TICKER</th>
-                <th className="py-3 px-4">PURCHASE DATE</th>
-                <th className="py-3 px-4 font-mono text-right">QUANTITY</th>
-                <th className="py-3 px-4 font-mono text-right">BUY PRICE</th>
-                <th className="py-3 px-4 font-mono text-right">TOTAL COST</th>
-                <th className="py-3 px-4 font-mono text-right">CURRENT PRICE</th>
-                <th className="py-3 px-4 font-mono text-right">CURRENT VALUE</th>
-                <th className="py-3 px-4 font-mono text-right">UNREALIZED P/L</th>
-                <th className="py-3 px-4 font-mono text-right">ROI</th>
-                <th className="py-3 px-4">EXCHANGE / CUSTODY</th>
-                <th className="py-3 px-4 text-center">ACTIONS</th>
+                <th className="py-3 px-3">S/NO</th>
+                <th className="py-3 px-3">DATE</th>
+                <th className="py-3 px-3">CRYPTO / TICKER</th>
+                <th className="py-3 px-3">UNIT PRICE ($)</th>
+                <th className="py-3 px-3">DOLLAR RATE (₦)</th>
+                <th className="py-3 px-3">QTY</th>
+                <th className="py-3 px-3">AMOUNT ($)</th>
+                <th className="py-3 px-3">TOTAL ($)</th>
+                <th className="py-3 px-3">TOTAL (₦)</th>
+                <th className="py-3 px-3">EXCHANGE</th>
+                <th className="py-3 px-3 text-right">ACTION</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#eeeeed] dark:divide-[#2d3130]">
+            <tbody className="divide-y divide-[#eeeeed]">
               {filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-8 text-center text-[#747878] dark:text-[#8c9290]">
-                    No cryptocurrency holdings found. Click "Add Crypto Asset" to record your spot positions.
+                  <td colSpan={11} className="py-8 text-center text-[#747878]">
+                    No crypto investment records found. Click &quot;New Crypto Investment&quot; to record your buy transactions.
                   </td>
                 </tr>
               ) : (
-                filteredRecords.map((rec) => {
-                  const currSym = rec.purchaseCurrency === 'USD' ? '$' : '₦';
-                  const isProfit = (rec.unrealizedGainLoss || 0) >= 0;
+                filteredRecords.map((r, idx) => {
+                  const unitPrice = r.unitPriceUsd ?? r.purchasePrice ?? 0;
+                  const qty = r.qty ?? r.quantity ?? 0;
+                  const dollarRate = r.dollarRateNaira ?? settings.currentUsdExchangeRate ?? 1600;
+                  const amountUsd = r.amountUsd ?? (unitPrice * qty);
+                  const totalAmountUsd = r.totalAmountUsd ?? amountUsd;
+                  const totalAmountNaira = r.totalAmountNaira ?? (totalAmountUsd * dollarRate);
+                  const exchangeDisplay = r.exchange || r.exchangeOrPlatform || 'Not specified';
+                  const dateStr = r.investmentDate || r.date || r.createdAt;
+                  const tickerStr = r.ticker || '';
+                  const nameStr = r.cryptoName || '';
+
+                  // Crypto / Ticker label format
+                  const cryptoLabel = tickerStr 
+                    ? (nameStr && nameStr.toUpperCase() !== tickerStr.toUpperCase() ? `${nameStr} (${tickerStr})` : tickerStr) 
+                    : (nameStr || '—');
+
                   return (
-                    <tr key={rec.id} className="hover:bg-[#faf9f8] dark:hover:bg-[#222625] transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-[#f59e0b]/15 text-[#b45309] dark:text-[#fbbf24] flex items-center justify-center font-bold font-mono text-xs">
-                            {rec.ticker?.slice(0, 3)}
-                          </div>
-                          <div>
-                            <div className="font-bold text-[#1a1c1c] dark:text-[#e1e3e2]">{rec.cryptoName}</div>
-                            <div className="text-[10px] font-mono font-semibold text-[#747878] dark:text-[#8c9290]">{rec.ticker} &middot; {rec.purchaseCurrency}</div>
-                          </div>
-                        </div>
+                    <tr key={r.id} className="hover:bg-[#faf9f8] transition-colors">
+                      <td className="py-3 px-3 font-mono text-[#747878]">{r.sNo || idx + 1}</td>
+                      <td className="py-3 px-3 font-mono font-medium text-[#1a1c1c]">{formatDate(dateStr)}</td>
+                      <td className="py-3 px-3 font-mono font-bold text-[#1a1c1c]">{cryptoLabel}</td>
+                      <td className="py-3 px-3 font-mono text-[#1a1c1c]">{formatUSD(unitPrice, true)}</td>
+                      <td className="py-3 px-3 font-mono text-[#747878]">{formatNaira(dollarRate)}</td>
+                      <td className="py-3 px-3 font-mono font-semibold text-[#1a1c1c]">
+                        {typeof qty === 'number' ? qty.toLocaleString(undefined, { maximumFractionDigits: 8 }) : qty}
                       </td>
-                      <td className="py-3 px-4 text-[#444748] dark:text-[#c2c7c5] whitespace-nowrap font-mono">{rec.investmentDate}</td>
-                      <td className="py-3 px-4 font-mono font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] text-right">{rec.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 })}</td>
-                      <td className="py-3 px-4 font-mono text-[#444748] dark:text-[#c2c7c5] text-right">{currSym}{rec.purchasePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="py-3 px-4 font-mono font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] text-right">{currSym}{rec.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="py-3 px-4 font-mono text-[#444748] dark:text-[#c2c7c5] text-right">{currSym}{rec.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-[#1a1c1c] dark:text-[#e1e3e2] text-right">{currSym}{rec.currentValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className={`py-3 px-4 font-mono font-bold text-right ${isProfit ? 'text-[#1b6b51] dark:text-[#60d3a7]' : 'text-[#ba1a1a] dark:text-[#ff897d]'}`}>
-                        {isProfit ? '+' : ''}{currSym}{rec.unrealizedGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className={`py-3 px-4 font-mono font-bold text-right ${isProfit ? 'text-[#1b6b51] dark:text-[#60d3a7]' : 'text-[#ba1a1a] dark:text-[#ff897d]'}`}>
-                        {isProfit ? '+' : ''}{formatPercent(rec.returnOnInvestmentPct)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#f4f3f2] dark:bg-[#222625] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130] whitespace-nowrap">
-                          {rec.exchangeOrPlatform || 'Cold Wallet'}
+                      <td className="py-3 px-3 font-mono text-[#1a1c1c]">{formatUSD(amountUsd, true)}</td>
+                      <td className="py-3 px-3 font-mono font-bold text-[#1a1c1c]">{formatUSD(totalAmountUsd, true)}</td>
+                      <td className="py-3 px-3 font-mono font-semibold text-[#1a1c1c]">{formatNaira(totalAmountNaira)}</td>
+                      <td className="py-3 px-3 font-mono text-[#444748]">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-[#f4f3f2] text-[#444748] border border-[#e3e2e1] whitespace-nowrap">
+                          {exchangeDisplay}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => handleOpenEdit(rec)}
-                            title="Edit Holding"
-                            className="p-1.5 hover:bg-[#e3e2e1] dark:hover:bg-[#2d3130] text-[#747878] dark:text-[#8c9290] hover:text-[#1a1c1c] dark:hover:text-[#e1e3e2] rounded transition-colors cursor-pointer"
+                      <td className="py-3 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button 
+                            onClick={() => handleOpenEdit(r)} 
+                            title="Edit Record" 
+                            className="text-[#747878] hover:text-[#1a1c1c] p-1 cursor-pointer transition-colors"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => handleDelete(rec.id, `${rec.cryptoName} (${rec.ticker})`)}
-                            title="Delete Holding"
-                            className="p-1.5 hover:bg-[#ba1a1a]/10 text-[#ba1a1a] dark:text-[#ff897d] rounded transition-colors cursor-pointer"
+                          <button 
+                            onClick={() => handleDelete(r.id, r.cryptoName || r.ticker || 'Crypto Record')} 
+                            title="Delete Record" 
+                            className="text-[#747878] hover:text-[#ba1a1a] p-1 cursor-pointer transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -384,31 +387,43 @@ export const CryptoInvestmentsScreen: React.FC = () => {
                 })
               )}
             </tbody>
+            <tfoot className="bg-[#f4f3f2]/60 font-semibold border-t border-[#e3e2e1] text-xs">
+              <tr>
+                <td colSpan={5} className="py-3 px-3 font-bold text-[#1a1c1c]">TOTAL CRYPTO BOUGHT</td>
+                <td className="py-3 px-3 font-mono font-semibold text-[#1a1c1c]">
+                  {totalBuyQty.toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                </td>
+                <td className="py-3 px-3 font-mono text-[#1a1c1c]">{formatUSD(totalBuyAmountUsd)}</td>
+                <td className="py-3 px-3 font-mono font-bold text-[#1a1c1c]">{formatUSD(totalBuyAmountUsd)}</td>
+                <td className="py-3 px-3 font-mono font-bold text-[#1a1c1c]">{formatNaira(totalBuyAmountNaira)}</td>
+                <td colSpan={2}></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add / Edit Crypto Investment Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#e3e2e1] dark:border-[#2d3130]">
+          <div className="bg-[#ffffff] border border-[#e3e2e1] rounded max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e3e2e1]">
               <div className="flex items-center gap-2">
-                <Coins className="w-5 h-5 text-[#f59e0b]" />
-                <h2 className="text-base font-bold text-[#1a1c1c] dark:text-[#e1e3e2]">
-                  {editingRecord ? 'Edit Crypto Holding' : 'Add New Crypto Asset'}
+                <Coins className="w-5 h-5 text-[#b45309]" />
+                <h2 className="text-base font-bold text-[#1a1c1c]">
+                  {editingRecord ? 'Edit Crypto Investment Record' : 'New Crypto Investment Record'}
                 </h2>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-[#747878] hover:text-[#1a1c1c] dark:text-[#8c9290] dark:hover:text-[#e1e3e2] rounded transition-colors cursor-pointer"
+                className="p-1 text-[#747878] hover:text-[#1a1c1c] rounded transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 rounded text-xs bg-[#ba1a1a]/10 text-[#ba1a1a] dark:text-[#ff897d] border border-[#ba1a1a]/20">
+              <div className="p-3 rounded text-xs bg-[#ba1a1a]/10 text-[#ba1a1a] border border-[#ba1a1a]/20">
                 {formError}
               </div>
             )}
@@ -416,162 +431,201 @@ export const CryptoInvestmentsScreen: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Cryptocurrency Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Bitcoin, Ethereum"
-                    value={formData.cryptoName}
-                    onChange={(e) => setFormData({ ...formData, cryptoName: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Ticker Symbol *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. BTC, ETH, SOL"
-                    value={formData.ticker}
-                    onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 text-xs font-mono uppercase bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Purchase Date
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
+                    Date *
                   </label>
                   <input
                     type="date"
                     required
                     value={formData.investmentDate}
                     onChange={(e) => setFormData({ ...formData, investmentDate: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Currency
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
+                    Crypto / Ticker *
                   </label>
-                  <select
-                    value={formData.purchaseCurrency}
-                    onChange={(e) => setFormData({ ...formData, purchaseCurrency: e.target.value as 'USD' | 'NGN' })}
-                    className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="NGN">NGN (₦)</option>
-                  </select>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. BTC, ETH, SOL"
+                    value={formData.ticker}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      ticker: e.target.value.toUpperCase(),
+                      cryptoName: formData.cryptoName || e.target.value 
+                    })}
+                    className="w-full px-3 py-2 text-xs font-mono uppercase bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
+                  Cryptocurrency Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Bitcoin, Ethereum, Solana"
+                  value={formData.cryptoName}
+                  onChange={(e) => setFormData({ ...formData, cryptoName: e.target.value })}
+                  className="w-full px-3 py-2 text-xs bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
+                    Unit Price ($) *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    placeholder="e.g. 60000"
+                    value={formData.unitPrice}
+                    onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
+                    Dollar Rate (₦) *
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    placeholder="e.g. 1600"
+                    value={formData.dollarRate}
+                    onChange={(e) => setFormData({ ...formData, dollarRate: e.target.value })}
+                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
                     Quantity *
                   </label>
                   <input
                     type="number"
                     step="any"
                     required
-                    placeholder="0.00"
+                    placeholder="e.g. 0.05"
                     value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Purchase Price *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    placeholder="0.00"
-                    value={formData.purchasePrice}
-                    onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
+              {/* Exchange Selection */}
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
+                  Exchange / Platform
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 mb-2">
+                  {COMMON_EXCHANGES.map(ex => (
+                    <button
+                      type="button"
+                      key={ex}
+                      onClick={() => setFormData({ ...formData, exchange: ex })}
+                      className={`px-2 py-1 text-[11px] font-mono rounded text-center transition-all cursor-pointer truncate ${
+                        formData.exchange === ex
+                          ? 'bg-[#1a1c1c] text-[#faf9f8] font-bold shadow-xs'
+                          : 'bg-[#faf9f8] text-[#444748] border border-[#e3e2e1] hover:bg-[#f4f3f2]'
+                      }`}
+                    >
+                      {ex}
+                    </button>
+                  ))}
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Current Market Price
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="Same as purchase if empty"
-                    value={formData.currentPrice}
-                    onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
-                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={COMMON_EXCHANGES.includes(formData.exchange) ? formData.exchange : 'Other'}
+                    onChange={(e) => {
+                      if (e.target.value === 'Other') {
+                        setFormData({ ...formData, exchange: 'Other' });
+                      } else {
+                        setFormData({ ...formData, exchange: e.target.value, customExchange: '' });
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs font-mono bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c] shrink-0"
+                  >
+                    {COMMON_EXCHANGES.map(ex => (
+                      <option key={ex} value={ex}>{ex}</option>
+                    ))}
+                    <option value="Other">Other (Specify...)</option>
+                  </select>
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Transaction Fee
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    placeholder="0.00"
-                    value={formData.transactionFee}
-                    onChange={(e) => setFormData({ ...formData, transactionFee: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
+                  {(!COMMON_EXCHANGES.includes(formData.exchange) || formData.exchange === 'Other') && (
+                    <input
+                      type="text"
+                      placeholder="Specify custom exchange name..."
+                      value={formData.customExchange}
+                      onChange={(e) => setFormData({ ...formData, customExchange: e.target.value })}
+                      className="flex-1 px-3 py-1.5 text-xs bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Calculated Live Preview Box */}
+              <div className="bg-[#faf9f8] border border-[#e3e2e1] p-3 rounded space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-[#747878] uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5">
+                    <Calculator className="w-3.5 h-3.5 text-[#b45309]" />
+                    <span>Calculated Value Preview</span>
+                  </div>
+                  <span>No Commission</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div>
+                    <div className="text-[10px] text-[#747878]">AMOUNT ($)</div>
+                    <div className="text-xs font-mono font-bold text-[#1a1c1c]">{formatUSD(previewAmountUsd, true)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-[#747878]">TOTAL ($)</div>
+                    <div className="text-xs font-mono font-bold text-[#1a1c1c]">{formatUSD(previewTotalUsd, true)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-[#747878]">TOTAL (₦)</div>
+                    <div className="text-xs font-mono font-bold text-[#1a1c1c]">{formatNaira(previewTotalNaira)}</div>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                  Exchange / Platform / Wallet
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] mb-1">
+                  Notes &amp; Strategy (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Binance, Ledger Nano X, Bybit, Coinbase"
-                  value={formData.exchange}
-                  onChange={(e) => setFormData({ ...formData, exchange: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                  Notes &amp; Strategy
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Long-term DCA, cold storage vault, halving cycle target"
+                  placeholder="e.g. Long-term DCA, cold storage, halving target"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  className="w-full px-3 py-2 text-xs bg-[#faf9f8] border border-[#e3e2e1] rounded focus:outline-none focus:border-[#1a1c1c] text-[#1a1c1c]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#e3e2e1] dark:border-[#2d3130]">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#e3e2e1]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-[#444748] dark:text-[#c2c7c5] hover:bg-[#f4f3f2] dark:hover:bg-[#222625] rounded transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-[#444748] hover:bg-[#f4f3f2] rounded transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded cursor-pointer shadow-xs transition-colors"
+                  className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded cursor-pointer shadow-xs transition-colors flex items-center gap-1.5"
                 >
-                  {editingRecord ? 'Save Changes' : 'Record Asset'}
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{editingRecord ? 'Save Changes' : 'Record Investment'}</span>
                 </button>
               </div>
             </form>

@@ -41,6 +41,7 @@ export interface ForeignStockBuyRecord extends BaseRecord {
   amountUsd: number; // unitPriceUsd * qty
   totalAmountUsd: number; // amountUsd + commissionUsd
   totalAmountNaira: number; // totalAmountUsd * dollarRateNaira
+  broker?: string;
 }
 
 export interface ForeignStockSellRecord extends BaseRecord {
@@ -57,6 +58,7 @@ export interface ForeignStockSellRecord extends BaseRecord {
   profitOrLossNaira: number;
   remarks?: string;
   buyLotReferenceId?: string;
+  broker?: string;
 }
 
 // 3. NIGERIAN STOCK TRADING
@@ -231,25 +233,36 @@ export interface LockedSavingsRecord extends BaseRecord {
 
 // 11. CRYPTO INVESTMENTS (LONG-TERM HOLDINGS)
 export interface CryptoInvestmentRecord extends BaseRecord {
+  sNo?: number;
+  date?: string; // YYYY-MM-DD
   cryptoName: string; // e.g. 'Bitcoin', 'Ethereum', 'Solana', 'Tether'
   ticker: string; // e.g. 'BTC', 'ETH', 'SOL', 'USDT'
   investmentDate: string; // YYYY-MM-DD
+  unitPriceUsd?: number;
+  dollarRateNaira?: number;
+  qty?: number;
   quantity: number;
+  amountUsd?: number;
+  totalAmountUsd?: number;
+  totalAmountNaira?: number;
   purchasePrice: number; // Purchase price per coin/token
   purchaseCurrency: 'USD' | 'NGN';
-  exchange: string; // 'Binance', 'Bybit', 'KuCoin', 'Coinbase', 'Trust Wallet', 'Ledger', etc.
-  transactionFee: number; // Fee in purchaseCurrency
+  exchange?: string; // 'Binance', 'Luno', 'Remitano', etc.
+  exchangeOrPlatform?: string; // legacy support
+  transactionFee?: number; // Fee in purchaseCurrency
   totalCost: number; // (quantity * purchasePrice) + transactionFee
-  totalCostNaira: number;
-  totalCostUsd: number;
+  totalCostNaira?: number;
+  totalCostUsd?: number;
   currentPrice: number; // Current valuation price per unit (in purchaseCurrency / USD)
   currentValue: number; // quantity * currentPrice
-  currentValueNaira: number;
-  currentValueUsd: number;
-  unrealizedProfitLoss: number; // currentValue - totalCost
-  unrealizedProfitLossNaira: number;
-  unrealizedProfitLossUsd: number;
-  roiPercentage: number; // (unrealizedProfitLoss / totalCost) * 100
+  currentValueNaira?: number;
+  currentValueUsd?: number;
+  unrealizedProfitLoss?: number; // currentValue - totalCost
+  unrealizedGainLoss?: number;
+  unrealizedProfitLossNaira?: number;
+  unrealizedProfitLossUsd?: number;
+  roiPercentage?: number; // (unrealizedProfitLoss / totalCost) * 100
+  returnOnInvestmentPct?: number;
   notes?: string;
 }
 
@@ -407,4 +420,19 @@ export interface PassiveIncomeMatrixRecord extends BaseRecord {
   };
   currency?: 'NGN' | 'USD';
   notes?: string;
+}
+
+// 14. TRADING NOTES & RULES DEFINITIONS
+export interface TradingRuleItem {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+}
+
+export interface ModuleTradingRules extends BaseRecord {
+  moduleId: string;
+  title: string;
+  rules: TradingRuleItem[];
+  userId?: string;
 }

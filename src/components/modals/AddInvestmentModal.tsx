@@ -70,6 +70,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
   const [navAtPurchase, setNavAtPurchase] = useState<string>('10.50');
   const [currentNav, setCurrentNav] = useState<string>('10.50');
   const [broker, setBroker] = useState<string>('MERISTERN CHIJIOKE');
+  const [foreignBroker, setForeignBroker] = useState<string>('Interactive Brokers');
   const [investMonth, setInvestMonth] = useState<string>('FEBRUARY');
   const [tenorYears, setTenorYears] = useState<string>('3');
   const [goldSpotPrice, setGoldSpotPrice] = useState<string>(settings.currentGoldSpotPriceUsd.toString());
@@ -126,6 +127,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         const q = parseFloat(qty) || 0;
         const comm = parseFloat(commission) || 0;
         const dRate = parseFloat(dollarRate) || 1670;
+        const selectedBroker = foreignBroker.trim() || 'Not specified';
         if (subType === 'BUY') {
           const calc = calculateForeignStockBuy(uPrice, q, comm, dRate);
           addForeignStockBuy({
@@ -138,7 +140,8 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
             commissionUsd: comm,
             amountUsd: calc.amountUsd,
             totalAmountUsd: calc.totalAmountUsd,
-            totalAmountNaira: calc.totalAmountNaira
+            totalAmountNaira: calc.totalAmountNaira,
+            broker: selectedBroker
           });
         } else {
           const calc = calculateForeignStockSell(uPrice, q, comm, dRate, 53.40, 1675);
@@ -154,7 +157,8 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
             totalAmountNaira: calc.totalAmountNaira,
             profitOrLossUsd: calc.profitOrLossUsd,
             profitOrLossNaira: calc.profitOrLossNaira,
-            remarks: remark
+            remarks: remark,
+            broker: selectedBroker
           });
         }
         break;
@@ -555,6 +559,30 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                     onChange={(e) => setDollarRate(e.target.value)}
                     className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono"
                   />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Broker</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Interactive Brokers, Charles Schwab"
+                    value={foreignBroker}
+                    onChange={(e) => setForeignBroker(e.target.value)}
+                    list="foreign-stock-brokers"
+                    className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-medium text-[#1a1c1c]"
+                  />
+                  <datalist id="foreign-stock-brokers">
+                    <option value="Interactive Brokers" />
+                    <option value="Charles Schwab" />
+                    <option value="Bamboo" />
+                    <option value="Trove" />
+                    <option value="Chaka" />
+                    <option value="Passfolio" />
+                    <option value="Robinhood" />
+                    <option value="Fidelity" />
+                    <option value="E*TRADE" />
+                    <option value="Webull" />
+                  </datalist>
                 </div>
               </>
             )}

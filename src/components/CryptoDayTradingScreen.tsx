@@ -19,8 +19,12 @@ import {
   Zap,
   Target,
   Percent,
+  Calculator,
+  Check,
   X
 } from 'lucide-react';
+
+const PRESET_EXCHANGES = ['Binance', 'Luno', 'Remitano', 'Bybit', 'KuCoin', 'Coinbase', 'OKX', 'Kraken'];
 
 export const CryptoDayTradingScreen: React.FC = () => {
   const { cryptoDayTrades, addCryptoDayTrade, updateCryptoDayTrade, deleteCryptoDayTrade, settings, summary } = useWealth();
@@ -43,7 +47,7 @@ export const CryptoDayTradingScreen: React.FC = () => {
     exitPrice: '',
     quantity: '',
     tradingFee: '0',
-    exchange: 'Binance Futures',
+    exchange: 'Binance',
     strategy: 'Breakout Momentum',
     notes: ''
   });
@@ -63,7 +67,7 @@ export const CryptoDayTradingScreen: React.FC = () => {
       exitPrice: '',
       quantity: '',
       tradingFee: '0',
-      exchange: 'Binance Futures',
+      exchange: 'Binance',
       strategy: 'Breakout Momentum',
       notes: ''
     });
@@ -79,12 +83,12 @@ export const CryptoDayTradingScreen: React.FC = () => {
       exitTime: trade.exitTime || '15:45',
       cryptoName: trade.cryptoName || '',
       ticker: trade.ticker || '',
-      positionType: trade.positionType || 'LONG',
-      entryPrice: String(trade.entryPrice || ''),
-      exitPrice: String(trade.exitPrice || ''),
-      quantity: String(trade.quantity || ''),
-      tradingFee: String(trade.tradingFee || 0),
-      exchange: trade.exchange || 'Binance Futures',
+      positionType: (trade.positionType?.toUpperCase() === 'SHORT' ? 'SHORT' : 'LONG') as 'LONG' | 'SHORT',
+      entryPrice: String(trade.entryPrice ?? ''),
+      exitPrice: String(trade.exitPrice ?? ''),
+      quantity: String(trade.quantity ?? ''),
+      tradingFee: String(trade.tradingFee ?? 0),
+      exchange: trade.exchange || 'Binance',
       strategy: trade.strategy || 'Breakout Momentum',
       notes: trade.notes || ''
     });
@@ -129,7 +133,7 @@ export const CryptoDayTradingScreen: React.FC = () => {
       exitTime: formData.exitTime,
       cryptoName: formData.cryptoName.trim(),
       ticker: formData.ticker.trim().toUpperCase(),
-      positionType: formData.positionType,
+      positionType: formData.positionType === 'LONG' ? ('Long' as const) : ('Short' as const),
       entryPrice: entry,
       exitPrice: exit,
       quantity: qty,
@@ -138,10 +142,9 @@ export const CryptoDayTradingScreen: React.FC = () => {
       tradingFee: fee,
       grossProfitLoss,
       netProfitLoss,
-      roiPercent,
-      exchange: formData.exchange.trim() || 'Crypto Exchange',
+      roiPercentage: roiPercent,
+      exchange: formData.exchange.trim() || 'Binance',
       strategy: formData.strategy.trim() || 'Day Trade',
-      tradeStatus: formData.tradeStatus,
       notes: formData.notes.trim()
     };
 
@@ -173,7 +176,7 @@ export const CryptoDayTradingScreen: React.FC = () => {
         (t.strategy || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (t.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesPos = positionFilter === 'ALL' || t.positionType === positionFilter;
+      const matchesPos = positionFilter === 'ALL' || t.positionType?.toUpperCase() === positionFilter;
       
       let matchesOutcome = true;
       if (outcomeFilter === 'WIN') matchesOutcome = (t.netProfitLoss || 0) > 0;
@@ -362,21 +365,22 @@ export const CryptoDayTradingScreen: React.FC = () => {
               <tr>
                 <th className="py-3 px-4">DATE &amp; TIME</th>
                 <th className="py-3 px-4">ASSET / TICKER</th>
-                <th className="py-3 px-4">TYPE</th>
+                <th className="py-3 px-4">POSITION</th>
                 <th className="py-3 px-4 font-mono text-right">ENTRY PRICE</th>
                 <th className="py-3 px-4 font-mono text-right">EXIT PRICE</th>
-                <th className="py-3 px-4 font-mono text-right">QTY / SIZE</th>
-                <th className="py-3 px-4 font-mono text-right">FEE</th>
+                <th className="py-3 px-4 font-mono text-right">QUANTITY</th>
+                <th className="py-3 px-4">EXCHANGE</th>
+                <th className="py-3 px-4 font-mono text-right">FEES</th>
                 <th className="py-3 px-4 font-mono text-right">NET P/L ($)</th>
                 <th className="py-3 px-4 font-mono text-right">ROI (%)</th>
-                <th className="py-3 px-4">STRATEGY / EXCHANGE</th>
+                <th className="py-3 px-4">STRATEGY</th>
                 <th className="py-3 px-4 text-center">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#eeeeed] dark:divide-[#2d3130]">
               {filteredTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-8 text-center text-[#747878] dark:text-[#8c9290]">
+                  <td colSpan={12} className="py-8 text-center text-[#747878] dark:text-[#8c9290]">
                     No day trading logs recorded. Click "Log Day Trade" to start logging your crypto executions.
                   </td>
                 </tr>
@@ -384,7 +388,8 @@ export const CryptoDayTradingScreen: React.FC = () => {
                 filteredTrades.map((t) => {
                   const isWin = (t.netProfitLoss || 0) > 0;
                   const isLoss = (t.netProfitLoss || 0) < 0;
-                  const isLong = t.positionType === 'LONG';
+                  const isLong = (t.positionType || '').toUpperCase() === 'LONG';
+                  const roiVal = t.roiPercentage ?? t.roiPercent ?? 0;
                   return (
                     <tr key={t.id} className="hover:bg-[#faf9f8] dark:hover:bg-[#222625] transition-colors">
                       <td className="py-3 px-4 text-[#444748] dark:text-[#c2c7c5] whitespace-nowrap">
@@ -402,22 +407,30 @@ export const CryptoDayTradingScreen: React.FC = () => {
                             : 'bg-[#ba1a1a]/10 text-[#ba1a1a] dark:bg-[#ba1a1a]/30 dark:text-[#ff897d] border border-[#ba1a1a]/20'
                         }`}>
                           {isLong ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                          <span>{t.positionType}</span>
+                          <span>{isLong ? 'LONG' : 'SHORT'}</span>
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono text-[#444748] dark:text-[#c2c7c5] text-right">${t.entryPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="py-3 px-4 font-mono text-[#444748] dark:text-[#c2c7c5] text-right">${t.exitPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="py-3 px-4 font-mono font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] text-right">{t.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}</td>
-                      <td className="py-3 px-4 font-mono text-[#747878] dark:text-[#8c9290] text-right">${t.tradingFee.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="py-3 px-4 font-mono text-[#444748] dark:text-[#c2c7c5] text-right">${(t.entryPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="py-3 px-4 font-mono text-[#444748] dark:text-[#c2c7c5] text-right">${(t.exitPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="py-3 px-4 font-mono font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] text-right">{(t.quantity || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}</td>
+                      <td className="py-3 px-4">
+                        <span className="font-medium text-[#1a1c1c] dark:text-[#e1e3e2]">
+                          {t.exchange ? (
+                            t.exchange
+                          ) : (
+                            <span className="text-[#747878] dark:text-[#8c9290] italic">Not specified</span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[#747878] dark:text-[#8c9290] text-right">${(t.tradingFee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                       <td className={`py-3 px-4 font-mono font-bold text-right ${isWin ? 'text-[#1b6b51] dark:text-[#60d3a7]' : isLoss ? 'text-[#ba1a1a] dark:text-[#ff897d]' : 'text-[#747878]'}`}>
-                        {isWin ? '+' : ''}${t.netProfitLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {isWin ? '+' : ''}${(t.netProfitLoss || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className={`py-3 px-4 font-mono font-bold text-right ${isWin ? 'text-[#1b6b51] dark:text-[#60d3a7]' : isLoss ? 'text-[#ba1a1a] dark:text-[#ff897d]' : 'text-[#747878]'}`}>
-                        {isWin ? '+' : ''}{formatPercent(t.roiPercent)}
+                        {isWin ? '+' : ''}{formatPercent(roiVal)}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] truncate max-w-[140px]">{t.strategy}</div>
-                        <div className="text-[10px] text-[#747878] dark:text-[#8c9290] font-mono">{t.exchange}</div>
+                        <div className="font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] truncate max-w-[140px]">{t.strategy || 'Day Trade'}</div>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -429,7 +442,7 @@ export const CryptoDayTradingScreen: React.FC = () => {
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => handleDelete(t.id, t.ticker, t.netProfitLoss)}
+                            onClick={() => handleDelete(t.id, t.ticker, t.netProfitLoss || 0)}
                             title="Delete Trade"
                             className="p-1.5 hover:bg-[#ba1a1a]/10 text-[#ba1a1a] dark:text-[#ff897d] rounded transition-colors cursor-pointer"
                           >
@@ -446,23 +459,39 @@ export const CryptoDayTradingScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Add / Edit Trade Modal */}
+      {/* Add / Edit Trade Modal — Matches Exact New Investment Record Design */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+          <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded-md max-w-xl w-full p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5 my-auto max-h-[92vh] overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#e3e2e1] dark:border-[#2d3130]">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-[#1b6b51] dark:text-[#60d3a7]" />
-                <h2 className="text-base font-bold text-[#1a1c1c] dark:text-[#e1e3e2]">
-                  {editingRecord ? 'Edit Trade Execution Log' : 'Log New Day Trade'}
+              <div>
+                <h2 className="text-base font-semibold text-[#1a1c1c] dark:text-[#e1e3e2]">
+                  {editingRecord ? 'Edit Investment Record' : 'New Investment Record'}
                 </h2>
+                <p className="text-xs text-[#747878] dark:text-[#8c9290]">
+                  Select asset category and input trade parameters
+                </p>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 text-[#747878] hover:text-[#1a1c1c] dark:text-[#8c9290] dark:hover:text-[#e1e3e2] rounded transition-colors cursor-pointer"
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-[#747878] hover:text-[#1a1c1c] dark:text-[#8c9290] dark:hover:text-[#e1e3e2] p-1.5 rounded hover:bg-[#f4f3f2] dark:hover:bg-[#222625] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Category Display */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290]">
+                Investment Category
+              </label>
+              <div className="w-full bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-2 text-xs font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] flex items-center justify-between">
+                <span>Crypto Day Trading (Active Performance)</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1b6b51]/10 text-[#1b6b51] dark:bg-[#1b6b51]/30 dark:text-[#60d3a7] border border-[#1b6b51]/20 font-bold uppercase">
+                  Active Trading
+                </span>
+              </div>
             </div>
 
             {formError && (
@@ -471,85 +500,78 @@ export const CryptoDayTradingScreen: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Cryptocurrency Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Bitcoin, Solana"
-                    value={formData.cryptoName}
-                    onChange={(e) => setFormData({ ...formData, cryptoName: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Ticker Symbol *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. BTC, SOL"
-                    value={formData.ticker}
-                    onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 text-xs font-mono uppercase bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              {/* Buy / Sell Toggle Switch */}
+              <div className="flex items-center gap-2 bg-[#f4f3f2] dark:bg-[#222625] p-1 rounded">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, positionType: 'LONG' })}
+                  className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${
+                    formData.positionType === 'LONG' 
+                      ? 'bg-[#1a1c1c] text-[#faf9f8] dark:bg-[#e1e3e2] dark:text-[#111313] shadow-xs' 
+                      : 'text-[#747878] dark:text-[#8c9290]'
+                  }`}
+                >
+                  BUY ORDER (LONG)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, positionType: 'SHORT' })}
+                  className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${
+                    formData.positionType === 'SHORT' 
+                      ? 'bg-[#1a1c1c] text-[#faf9f8] dark:bg-[#e1e3e2] dark:text-[#111313] shadow-xs' 
+                      : 'text-[#747878] dark:text-[#8c9290]'
+                  }`}
+                >
+                  SELL ORDER (SHORT)
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Form Fields Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Date */}
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Position Type *
-                  </label>
-                  <select
-                    value={formData.positionType}
-                    onChange={(e) => setFormData({ ...formData, positionType: e.target.value as 'LONG' | 'SHORT' })}
-                    className="w-full px-3 py-2 text-xs font-bold bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  >
-                    <option value="LONG">LONG (Buy Low &rarr; Sell High)</option>
-                    <option value="SHORT">SHORT (Sell High &rarr; Buy Low)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Trade Date
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Date
                   </label>
                   <input
                     type="date"
                     required
                     value={formData.tradeDate}
                     onChange={(e) => setFormData({ ...formData, tradeDate: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
                   />
                 </div>
 
+                {/* Cryptocurrency / Ticker */}
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Trade Quantity *
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Cryptocurrency / Ticker
                   </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    placeholder="0.00"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                  />
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Bitcoin"
+                      value={formData.cryptoName}
+                      onChange={(e) => setFormData({ ...formData, cryptoName: e.target.value })}
+                      className="w-full bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="BTC"
+                      value={formData.ticker}
+                      onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
+                      className="w-full bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono uppercase text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Entry Price */}
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Entry Price ($) *
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Entry Price ($)
                   </label>
                   <input
                     type="number"
@@ -558,13 +580,14 @@ export const CryptoDayTradingScreen: React.FC = () => {
                     placeholder="0.00"
                     value={formData.entryPrice}
                     onChange={(e) => setFormData({ ...formData, entryPrice: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
                   />
                 </div>
 
+                {/* Exit Price */}
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Exit Price ($) *
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Exit Price ($)
                   </label>
                   <input
                     type="number"
@@ -573,12 +596,75 @@ export const CryptoDayTradingScreen: React.FC = () => {
                     placeholder="0.00"
                     value={formData.exitPrice}
                     onChange={(e) => setFormData({ ...formData, exitPrice: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  />
+                </div>
+
+                {/* Quantity and Exchange side-by-side */}
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    required
+                    placeholder="0.00"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Exchange
+                  </label>
+                  <div className="space-y-1 mt-1">
+                    <select
+                      value={
+                        PRESET_EXCHANGES.includes(formData.exchange) 
+                          ? formData.exchange 
+                          : formData.exchange ? 'Other' : 'Binance'
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'Other') {
+                          if (PRESET_EXCHANGES.includes(formData.exchange)) {
+                            setFormData(prev => ({ ...prev, exchange: '' }));
+                          }
+                        } else {
+                          setFormData(prev => ({ ...prev, exchange: val }));
+                        }
+                      }}
+                      className="w-full bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 text-xs text-[#1a1c1c] dark:text-[#e1e3e2] focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2]"
+                    >
+                      <option value="Binance">Binance</option>
+                      <option value="Luno">Luno</option>
+                      <option value="Remitano">Remitano</option>
+                      <option value="Bybit">Bybit</option>
+                      <option value="KuCoin">KuCoin</option>
+                      <option value="Coinbase">Coinbase</option>
+                      <option value="OKX">OKX</option>
+                      <option value="Kraken">Kraken</option>
+                      <option value="Other">Other (Custom)</option>
+                    </select>
+                    {(!PRESET_EXCHANGES.includes(formData.exchange)) && (
+                      <input
+                        type="text"
+                        required
+                        placeholder="Enter exchange name (e.g. Dex, Bitfinex)"
+                        value={formData.exchange}
+                        onChange={(e) => setFormData(prev => ({ ...prev, exchange: e.target.value }))}
+                        className="w-full bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 text-xs text-[#1a1c1c] dark:text-[#e1e3e2] focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2]"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Trading Fee */}
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
                     Trading Fee ($)
                   </label>
                   <input
@@ -587,85 +673,105 @@ export const CryptoDayTradingScreen: React.FC = () => {
                     placeholder="0.00"
                     value={formData.tradingFee}
                     onChange={(e) => setFormData({ ...formData, tradingFee: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Strategy / Setup */}
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Entry &amp; Exit Time
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Strategy / Setup
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. Breakout Momentum"
+                    value={formData.strategy}
+                    onChange={(e) => setFormData({ ...formData, strategy: e.target.value })}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  />
+                </div>
+
+                {/* Execution Window (Entry & Exit Time) */}
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Execution Window (Entry &ndash; Exit Time)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
                     <input
                       type="time"
                       value={formData.entryTime}
                       onChange={(e) => setFormData({ ...formData, entryTime: e.target.value })}
-                      className="w-full px-2 py-1.5 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded text-[#1a1c1c] dark:text-[#e1e3e2]"
+                      className="w-full bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
                     />
                     <input
                       type="time"
                       value={formData.exitTime}
                       onChange={(e) => setFormData({ ...formData, exitTime: e.target.value })}
-                      className="w-full px-2 py-1.5 text-xs font-mono bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded text-[#1a1c1c] dark:text-[#e1e3e2]"
+                      className="w-full bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                    Exchange / Platform
+                {/* Remarks / Notes */}
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase">
+                    Remarks / Notes
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Binance Futures, Bybit, KuCoin"
-                    value={formData.exchange}
-                    onChange={(e) => setFormData({ ...formData, exchange: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="e.g. Followed stop loss discipline, key resistance exit"
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 text-[#1a1c1c] dark:text-[#e1e3e2]"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                  Strategy / Setup
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Liquidity Sweep, 15m EMA Retest, Bullish Divergence"
-                  value={formData.strategy}
-                  onChange={(e) => setFormData({ ...formData, strategy: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                />
+              {/* Calculated Value Preview */}
+              <div className="p-3 bg-[#f4f3f2] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-[#747878] dark:text-[#8c9290]">
+                  <Calculator className="w-4 h-4 text-[#1a1c1c] dark:text-[#e1e3e2]" />
+                  <span className="font-semibold text-[#1a1c1c] dark:text-[#e1e3e2]">Calculated Value Preview:</span>
+                </div>
+                <div className="font-mono font-bold text-xs text-[#1a1c1c] dark:text-[#e1e3e2]">
+                  {(() => {
+                    const qty = parseFloat(formData.quantity) || 0;
+                    const entry = parseFloat(formData.entryPrice) || 0;
+                    const exit = parseFloat(formData.exitPrice) || 0;
+                    const fee = parseFloat(formData.tradingFee) || 0;
+                    const entryVal = qty * entry;
+                    const exitVal = qty * exit;
+                    const grossPl = formData.positionType === 'LONG' ? (exitVal - entryVal) : (entryVal - exitVal);
+                    const netPl = grossPl - fee;
+                    const roi = entryVal > 0 ? (netPl / entryVal) * 100 : 0;
+                    const isPositive = netPl >= 0;
+                    return (
+                      <span className={isPositive ? 'text-[#1b6b51] dark:text-[#60d3a7]' : 'text-[#ba1a1a] dark:text-[#ff897d]'}>
+                        Net P/L: {isPositive ? '+' : ''}${netPl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({isPositive ? '+' : ''}{roi.toFixed(2)}%)
+                        <span className="text-[10px] text-[#747878] dark:text-[#8c9290] ml-1.5 font-normal">
+                          (Volume: ${entryVal.toLocaleString(undefined, { minimumFractionDigits: 2 })} | Gross: {grossPl >= 0 ? '+' : ''}${grossPl.toFixed(2)} | Fee: -${fee.toFixed(2)})
+                        </span>
+                      </span>
+                    );
+                  })()}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#747878] dark:text-[#8c9290] mb-1">
-                  Execution Notes &amp; Psychology
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Followed stop loss discipline, exited at key resistance target"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded focus:outline-none focus:border-[#1a1c1c] dark:focus:border-[#e1e3e2] text-[#1a1c1c] dark:text-[#e1e3e2]"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#e3e2e1] dark:border-[#2d3130]">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#e3e2e1] dark:border-[#2d3130]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-[#444748] dark:text-[#c2c7c5] hover:bg-[#f4f3f2] dark:hover:bg-[#222625] rounded transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded text-xs font-semibold text-[#444748] dark:text-[#c2c7c5] hover:bg-[#f4f3f2] dark:hover:bg-[#222625] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded cursor-pointer shadow-xs transition-colors"
+                  className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                 >
-                  {editingRecord ? 'Update Trade Log' : 'Save Execution'}
+                  <Check className="w-4 h-4" />
+                  <span>{editingRecord ? 'Record Trade' : 'Record Trade'}</span>
                 </button>
               </div>
             </form>

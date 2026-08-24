@@ -29,6 +29,8 @@ import {
   AppSettings,
   PortfolioSummary,
   InvestmentCategory,
+  TradingRuleItem,
+  ModuleTradingRules,
   MarketReferenceRecord
 } from '../types';
 import {
@@ -49,6 +51,7 @@ import {
   initialDocuments,
   initialMarketReferences
 } from '../data/initialWorkbookData';
+import { INITIAL_MODULE_TRADING_RULES } from '../data/initialTradingRules';
 import { CATEGORY_DETAILS } from '../utils/calculations';
 
 interface WealthContextType {
@@ -95,7 +98,9 @@ interface WealthContextType {
   deleteUbaDca: (id: string) => Promise<void>;
   
   addForeignStockBuy: (record: Omit<ForeignStockBuyRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateForeignStockBuy: (id: string, updates: Partial<ForeignStockBuyRecord>) => Promise<void>;
   addForeignStockSell: (record: Omit<ForeignStockSellRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateForeignStockSell: (id: string, updates: Partial<ForeignStockSellRecord>) => Promise<void>;
   deleteForeignStock: (id: string, type: 'buy' | 'sell') => Promise<void>;
   
   addNigerianStockBuy: (record: Omit<NigerianStockBuyRecord, 'id' | 'createdAt'>) => Promise<void>;
@@ -154,6 +159,12 @@ interface WealthContextType {
   deleteDocument: (id: string) => Promise<void>;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
   
+  // Trading Notes & Rules
+  tradingRulesList: ModuleTradingRules[];
+  getModuleTradingRules: (moduleId: string) => ModuleTradingRules | undefined;
+  saveModuleTradingRules: (moduleId: string, title: string, rules: TradingRuleItem[]) => Promise<void>;
+  resetModuleTradingRules: (moduleId: string) => Promise<void>;
+
   // Bulk Data Actions
   seedInitialWorkbookToUserFirestore: () => Promise<void>;
   resetToMasterWorkbook: () => void;
@@ -624,10 +635,20 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     await saveUserRecord(user.uid, 'foreign_stock_buys', id, { ...record, createdAt: new Date().toISOString() });
   };
 
+  const updateForeignStockBuy = async (id: string, updates: Partial<ForeignStockBuyRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'foreign_stock_buys', id, updates);
+  };
+
   const addForeignStockSell = async (record: Omit<ForeignStockSellRecord, 'id' | 'createdAt'>) => {
     if (!user) return;
     const id = `fs-sell-${Date.now()}`;
     await saveUserRecord(user.uid, 'foreign_stock_sells', id, { ...record, createdAt: new Date().toISOString() });
+  };
+
+  const updateForeignStockSell = async (id: string, updates: Partial<ForeignStockSellRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'foreign_stock_sells', id, updates);
   };
 
   const deleteForeignStock = async (id: string, type: 'buy' | 'sell') => {
@@ -940,7 +961,9 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addUbaDca,
         deleteUbaDca,
         addForeignStockBuy,
+        updateForeignStockBuy,
         addForeignStockSell,
+        updateForeignStockSell,
         deleteForeignStock,
         addNigerianStockBuy,
         addNigerianStockSell,
