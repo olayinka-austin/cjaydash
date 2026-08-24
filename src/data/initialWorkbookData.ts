@@ -13,7 +13,8 @@ import {
   GoldEtfSellRecord,
   LockedSavingsRecord,
   AppDocument,
-  AppSettings
+  AppSettings,
+  MarketReferenceRecord
 } from '../types';
 
 export const initialAppSettings: AppSettings = {
@@ -701,5 +702,130 @@ export const initialDocuments: AppDocument[] = [
     fileSize: '520 KB',
     uploadDate: '2025-07-22',
     notes: 'UBA Dollar Domiciliary deposit receipt.'
+  }
+];
+
+// Initial Market Reference Records (Derived from authentic workbook entries)
+export const initialMarketReferences: MarketReferenceRecord[] = [
+  {
+    id: 'mkt-ref-usd-1',
+    createdAt: '2024-12-01T00:00:00Z',
+    date: '2024-12-01',
+    rate: 1675.00,
+    type: 'usd_ngn',
+    source: 'Foreign Stocks (O Buy) & Gold ETFs (GLD)',
+    remark: 'Historical reference exchange rate applied to December 2024 dollar trades.',
+    relatedInvestmentCategory: 'foreign_stocks',
+    relatedRecordId: 'fs-buy-1'
+  },
+  {
+    id: 'mkt-ref-gold-1',
+    createdAt: '2024-12-01T00:00:00Z',
+    date: '2024-12-01',
+    rate: 3365.02,
+    type: 'gold_usd',
+    source: 'Gold ETFs (GLD Buy Spot Benchmark)',
+    remark: 'Spot reference benchmark per troy ounce at time of GLD purchase.',
+    relatedInvestmentCategory: 'gold_etfs',
+    relatedRecordId: 'gold-buy-1'
+  },
+  {
+    id: 'mkt-ref-usd-2',
+    createdAt: '2025-02-01T00:00:00Z',
+    date: '2025-02-01',
+    rate: 1670.00,
+    type: 'usd_ngn',
+    source: 'Foreign Stocks (O Sell) & Gold ETFs (GLD Sell)',
+    remark: 'Liquidation reference rate used for realized profit calculations.',
+    relatedInvestmentCategory: 'foreign_stocks',
+    relatedRecordId: 'fs-sell-1'
+  },
+  {
+    id: 'mkt-ref-gold-2',
+    createdAt: '2025-02-01T00:00:00Z',
+    date: '2025-02-01',
+    rate: 3389.45,
+    type: 'gold_usd',
+    source: 'Gold ETFs (GLD Sell Spot Benchmark)',
+    remark: 'Spot reference benchmark per troy ounce at time of GLD liquidation.',
+    relatedInvestmentCategory: 'gold_etfs',
+    relatedRecordId: 'gold-sell-1'
+  },
+  {
+    id: 'mkt-ref-usd-3',
+    createdAt: '2025-07-21T00:00:00Z',
+    date: '2025-07-21',
+    rate: 1650.00,
+    type: 'usd_ngn',
+    source: 'UBA Domiciliary DCA Savings',
+    remark: 'Account deposit conversion rate for July 2025 dollar accumulation.',
+    relatedInvestmentCategory: 'uba_dca',
+    relatedRecordId: 'uba-1'
+  },
+  {
+    id: 'mkt-ref-usd-4',
+    createdAt: '2025-12-02T00:00:00Z',
+    date: '2025-12-02',
+    rate: 1670.00,
+    type: 'usd_ngn',
+    source: 'Foreign Stocks (O Buy Tranche 2)',
+    remark: 'Reference dollar conversion rate for December 2025 stock accumulation.',
+    relatedInvestmentCategory: 'foreign_stocks',
+    relatedRecordId: 'fs-buy-2'
+  },
+  {
+    id: 'mkt-ref-usd-5',
+    createdAt: '2025-12-02T00:00:00Z',
+    date: '2025-12-02',
+    rate: 1600.00,
+    type: 'usd_ngn',
+    source: 'Gold ETFs (IAU Buy Tranche)',
+    remark: 'Dollar conversion rate applied to IAU purchase.',
+    relatedInvestmentCategory: 'gold_etfs',
+    relatedRecordId: 'gold-buy-2'
+  },
+  {
+    id: 'mkt-ref-gold-3',
+    createdAt: '2025-12-02T00:00:00Z',
+    date: '2025-12-02',
+    rate: 3367.00,
+    type: 'gold_usd',
+    source: 'Gold ETFs (IAU Buy Spot Benchmark)',
+    remark: 'Spot reference benchmark per troy ounce at IAU purchase date.',
+    relatedInvestmentCategory: 'gold_etfs',
+    relatedRecordId: 'gold-buy-2'
+  },
+  {
+    id: 'mkt-ref-usd-6',
+    createdAt: '2025-12-03T00:00:00Z',
+    date: '2025-12-03',
+    rate: 1580.00,
+    type: 'usd_ngn',
+    source: 'Gold ETFs (SGOL Buy Tranche)',
+    remark: 'Dollar conversion rate applied to SGOL purchase.',
+    relatedInvestmentCategory: 'gold_etfs',
+    relatedRecordId: 'gold-buy-3'
+  },
+  {
+    id: 'mkt-ref-gold-4',
+    createdAt: '2025-12-03T00:00:00Z',
+    date: '2025-12-03',
+    rate: 3377.00,
+    type: 'gold_usd',
+    source: 'Gold ETFs (SGOL Buy Spot Benchmark)',
+    remark: 'Spot reference benchmark per troy ounce at SGOL purchase date.',
+    relatedInvestmentCategory: 'gold_etfs',
+    relatedRecordId: 'gold-buy-3'
+  },
+  {
+    id: 'mkt-ref-usd-7',
+    createdAt: '2025-12-16T00:00:00Z',
+    date: '2025-12-16',
+    rate: 1453.25,
+    type: 'usd_ngn',
+    source: 'Nigerian Stocks (ACCESSCORPS Buy)',
+    remark: 'Workbook conversion rate used to compute equivalent USD investment cost.',
+    relatedInvestmentCategory: 'nigerian_stocks',
+    relatedRecordId: 'ng-buy-1'
   }
 ];

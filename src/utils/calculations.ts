@@ -1,4 +1,17 @@
 // Exact Financial Calculations & Formatting Helpers from Ultimate Financial Independence Workbook
+import { AppSettings } from '../types';
+
+export const convertNairaToUsd = (naira: number | undefined | null, usdRate: number = 1780): number => {
+  if (!naira || isNaN(naira)) return 0;
+  const rate = usdRate > 0 ? usdRate : 1780;
+  return Number((naira / rate).toFixed(4));
+};
+
+export const convertUsdToNaira = (usd: number | undefined | null, usdRate: number = 1780): number => {
+  if (!usd || isNaN(usd)) return 0;
+  const rate = usdRate > 0 ? usdRate : 1780;
+  return Number((usd * rate).toFixed(2));
+};
 
 export const formatNaira = (amount: number | undefined | null, showDecimals: boolean = true): string => {
   if (amount === undefined || amount === null || isNaN(amount)) return '₦0.00';
@@ -12,8 +25,43 @@ export const formatUSD = (amount: number | undefined | null, showDecimals: boole
   if (amount === undefined || amount === null || isNaN(amount)) return '$0.00';
   return '$' + amount.toLocaleString('en-US', {
     minimumFractionDigits: showDecimals ? 2 : 0,
-    maximumFractionDigits: showDecimals ? 4 : 0
+    maximumFractionDigits: showDecimals ? 2 : 0
   });
+};
+
+/**
+ * Universal dynamic currency formatter respecting the global AppSettings currency toggle
+ * Converts figures seamlessly between NGN and USD based on the real-time exchange rate.
+ */
+export const formatFinancialValue = (
+  amountNaira: number | undefined | null,
+  settings?: Partial<AppSettings> | null,
+  options?: {
+    showDecimals?: boolean;
+    forceCurrency?: 'NGN' | 'USD' | 'ALL';
+    originalCurrency?: 'NGN' | 'USD';
+    amountUsd?: number;
+  }
+): string => {
+  const naira = amountNaira ?? 0;
+  const rate = settings?.currentUsdExchangeRate && settings.currentUsdExchangeRate > 0 ? settings.currentUsdExchangeRate : 1780.00;
+  const mode = options?.forceCurrency || settings?.currencyDisplay || 'ALL';
+  const showDecimals = options?.showDecimals ?? true;
+
+  const usd = options?.amountUsd !== undefined && options.amountUsd !== null
+    ? options.amountUsd 
+    : convertNairaToUsd(naira, rate);
+
+  if (mode === 'USD' || mode === 'USD_PRIMARY') {
+    return formatUSD(usd, showDecimals);
+  }
+
+  if (mode === 'NGN' || mode === 'NGN_PRIMARY') {
+    return formatNaira(naira, showDecimals);
+  }
+
+  // 'ALL' / Dual mode:
+  return `${formatNaira(naira, showDecimals)} (${formatUSD(usd, showDecimals)})`;
 };
 
 export const formatPercent = (rate: number | undefined | null): string => {

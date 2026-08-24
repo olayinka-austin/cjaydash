@@ -7,7 +7,8 @@ import {
   signInAnonymously,
   signOut as fbSignOut, 
   sendPasswordResetEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  updateProfile
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
@@ -27,9 +28,24 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   resendVerification: () => Promise<void>;
+  updateDisplayName: (name: string) => Promise<void>;
 }
 
 const LOCAL_SESSION_KEY = 'wealth_terminal_auth_session_v1';
+
+// Helper to determine display name from user profile
+const resolveDefaultDisplayName = (email: string | null, explicitName?: string | null): string => {
+  if (explicitName && explicitName.trim().length > 0) {
+    return explicitName.trim();
+  }
+  if (!email) return 'CJ';
+  const lowerEmail = email.toLowerCase().trim();
+  if (lowerEmail === 'austinolayinka667@gmail.com' || lowerEmail.includes('austin')) {
+    return 'CJ';
+  }
+  const prefix = email.split('@')[0];
+  return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -51,10 +67,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 1. Listen to native Firebase Auth state
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
+        const resolvedName = resolveDefaultDisplayName(currentUser.email, currentUser.displayName);
         setUser({
           uid: currentUser.uid,
           email: currentUser.email,
-          displayName: currentUser.displayName,
+          displayName: resolvedName,
           isAnonymous: currentUser.isAnonymous
         });
         localStorage.removeItem(LOCAL_SESSION_KEY);
@@ -65,7 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (savedSession) {
           try {
             const parsed = JSON.parse(savedSession);
-            setUser(parsed);
+            const resolvedName = resolveDefaultDisplayName(parsed.email, parsed.displayName);
+            setUser({
+              ...parsed,
+              displayName: resolvedName
+            });
           } catch (e) {
             localStorage.removeItem(LOCAL_SESSION_KEY);
             setUser(null);
@@ -80,6 +101,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  const updateDisplayName = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (auth.currentUser) {
+      try {
+        await updateProfile(auth.currentUser, { displayName: trimmed });
+      } catch (err) {
+        console.warn('Could not update Firebase profile display name:', err);
+      }
+    }
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated: AppUser = { ...prev, displayName: trimmed };
+      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const signIn = async (email: string, pass: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, pass);
@@ -88,10 +127,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Firebase Auth provider not toggled on yet: create secure deterministic user session
         console.warn('Firebase Email/Password provider not enabled; using authenticated user session fallback.');
         const fallbackUid = generateFallbackUid(email.toLowerCase().trim());
+        const resolvedName = resolveDefaultDisplayName(email, null);
         const fallbackUser: AppUser = {
           uid: fallbackUid,
           email: email.trim(),
-          displayName: email.split('@')[0],
+          displayName: resolvedName,
           isAnonymous: false
         };
         localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(fallbackUser));
@@ -116,10 +156,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed')) {
         console.warn('Firebase Email/Password provider not enabled; using authenticated user session fallback.');
         const fallbackUid = generateFallbackUid(email.toLowerCase().trim());
+        const resolvedName = resolveDefaultDisplayName(email, null);
         const fallbackUser: AppUser = {
           uid: fallbackUid,
           email: email.trim(),
-          displayName: email.split('@')[0],
+          displayName: resolvedName,
           isAnonymous: false
         };
         localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(fallbackUser));
@@ -177,7 +218,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInDemo, signOut, resetPassword, resendVerification }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signIn, 
+      signUp, 
+      signInDemo, 
+      signOut, 
+      resetPassword, 
+      resendVerification,
+      updateDisplayName 
+    }}>
       {children}
     </AuthContext.Provider>
   );

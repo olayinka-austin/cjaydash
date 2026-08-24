@@ -22,10 +22,14 @@ import {
   GoldEtfBuyRecord,
   GoldEtfSellRecord,
   LockedSavingsRecord,
+  CryptoInvestmentRecord,
+  CryptoDayTradeRecord,
+  PassiveIncomeMatrixRecord,
   AppDocument,
   AppSettings,
   PortfolioSummary,
-  InvestmentCategory
+  InvestmentCategory,
+  MarketReferenceRecord
 } from '../types';
 import {
   initialAppSettings,
@@ -42,7 +46,8 @@ import {
   initialGoldEtfBuys,
   initialGoldEtfSells,
   initialLockedSavingsRecords,
-  initialDocuments
+  initialDocuments,
+  initialMarketReferences
 } from '../data/initialWorkbookData';
 import { CATEGORY_DETAILS } from '../utils/calculations';
 
@@ -74,8 +79,12 @@ interface WealthContextType {
   goldEtfBuys: GoldEtfBuyRecord[];
   goldEtfSells: GoldEtfSellRecord[];
   lockedSavingsRecords: LockedSavingsRecord[];
+  cryptoInvestments: CryptoInvestmentRecord[];
+  cryptoDayTrades: CryptoDayTradeRecord[];
+  passiveIncomeMatrixRecords: PassiveIncomeMatrixRecord[];
   documents: AppDocument[];
   documentRecords: AppDocument[];
+  marketReferences: MarketReferenceRecord[];
   settings: AppSettings;
   
   // Aggregated Portfolio Metrics
@@ -119,6 +128,26 @@ interface WealthContextType {
   updateLockedSavings: (id: string, updates: Partial<LockedSavingsRecord>) => Promise<void>;
   deleteLockedSavings: (id: string) => Promise<void>;
   
+  // Crypto Investments Mutators
+  addCryptoInvestment: (record: Omit<CryptoInvestmentRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateCryptoInvestment: (id: string, updates: Partial<CryptoInvestmentRecord>) => Promise<void>;
+  deleteCryptoInvestment: (id: string) => Promise<void>;
+
+  // Crypto Day Trading Mutators
+  addCryptoDayTrade: (record: Omit<CryptoDayTradeRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateCryptoDayTrade: (id: string, updates: Partial<CryptoDayTradeRecord>) => Promise<void>;
+  deleteCryptoDayTrade: (id: string) => Promise<void>;
+
+  // Passive Income Matrix Mutators
+  savePassiveIncomeCell: (year: number, incomeSource: string, monthKey: keyof PassiveIncomeMatrixRecord['months'], value: number) => Promise<void>;
+  addPassiveIncomeSource: (year: number, incomeSource: string) => Promise<void>;
+  deletePassiveIncomeSource: (id: string) => Promise<void>;
+
+  // Market Reference Records
+  addMarketReference: (ref: Omit<MarketReferenceRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateMarketReference: (id: string, updates: Partial<MarketReferenceRecord>) => Promise<void>;
+  deleteMarketReference: (id: string) => Promise<void>;
+
   // Documents & Settings
   addDocument: (doc: Omit<AppDocument, 'id' | 'uploadDate'>) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
@@ -159,7 +188,11 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [goldEtfBuys, setGoldEtfBuys] = useState<GoldEtfBuyRecord[]>([]);
   const [goldEtfSells, setGoldEtfSells] = useState<GoldEtfSellRecord[]>([]);
   const [lockedSavingsRecords, setLockedSavingsRecords] = useState<LockedSavingsRecord[]>([]);
+  const [cryptoInvestments, setCryptoInvestments] = useState<CryptoInvestmentRecord[]>([]);
+  const [cryptoDayTrades, setCryptoDayTrades] = useState<CryptoDayTradeRecord[]>([]);
+  const [passiveIncomeMatrixRecords, setPassiveIncomeMatrixRecords] = useState<PassiveIncomeMatrixRecord[]>([]);
   const [documents, setDocuments] = useState<AppDocument[]>([]);
+  const [marketReferences, setMarketReferences] = useState<MarketReferenceRecord[]>([]);
 
   // Seed master data helper
   const seedInitialWorkbookToUserFirestore = async () => {
@@ -181,6 +214,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         goldEtfSells: initialGoldEtfSells,
         lockedSavingsRecords: initialLockedSavingsRecords,
         documents: initialDocuments,
+        marketReferences: initialMarketReferences,
         settings: initialAppSettings
       });
       setSyncStatus('synced');
@@ -208,7 +242,11 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setGoldEtfBuys([]);
       setGoldEtfSells([]);
       setLockedSavingsRecords([]);
+      setCryptoInvestments([]);
+      setCryptoDayTrades([]);
+      setPassiveIncomeMatrixRecords([]);
       setDocuments([]);
+      setMarketReferences([]);
       return;
     }
 
@@ -258,7 +296,11 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const unsubGoldBuys = createListener<GoldEtfBuyRecord>('gold_etf_buys', setGoldEtfBuys);
     const unsubGoldSells = createListener<GoldEtfSellRecord>('gold_etf_sells', setGoldEtfSells);
     const unsubLocked = createListener<LockedSavingsRecord>('locked_savings', setLockedSavingsRecords);
+    const unsubCryptoInv = createListener<CryptoInvestmentRecord>('crypto_investments', setCryptoInvestments);
+    const unsubCryptoTrades = createListener<CryptoDayTradeRecord>('crypto_day_trades', setCryptoDayTrades);
+    const unsubPassiveMatrix = createListener<PassiveIncomeMatrixRecord>('passive_income_matrix', setPassiveIncomeMatrixRecords);
     const unsubDocs = createListener<AppDocument>('documents', setDocuments);
+    const unsubMarketRef = createListener<MarketReferenceRecord>('market_references', setMarketReferences);
 
     // Stop loading after initialization
     const timer = setTimeout(() => {
@@ -282,7 +324,11 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       unsubGoldBuys();
       unsubGoldSells();
       unsubLocked();
+      unsubCryptoInv();
+      unsubCryptoTrades();
+      unsubPassiveMatrix();
       unsubDocs();
+      unsubMarketRef();
     };
   }, [user]);
 
@@ -357,7 +403,39 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const lockedInterestNaira = lockedSavingsRecords.reduce((acc, r) => acc + (r.interestNaira || 0), 0);
     const lockedTotalValueNaira = lockedSavingsRecords.reduce((acc, r) => acc + (r.expectedInterestPlusCapitalNaira || 0), 0);
 
-    // Total Capital Invested
+    // 11. Crypto Investments (Long-Term Holdings)
+    const cryptoTotalInvestedNaira = cryptoInvestments.reduce((acc, r) => {
+      const costN = r.purchaseCurrency === 'NGN' ? (r.totalCost || 0) : (r.totalCost || 0) * usdRate;
+      return acc + costN;
+    }, 0);
+    const cryptoTotalInvestedUsd = cryptoTotalInvestedNaira / usdRate;
+
+    const cryptoCurrentValueNaira = cryptoInvestments.reduce((acc, r) => {
+      const valN = r.purchaseCurrency === 'NGN' ? (r.currentValue || 0) : (r.currentValue || 0) * usdRate;
+      return acc + valN;
+    }, 0);
+    const cryptoCurrentValueUsd = cryptoCurrentValueNaira / usdRate;
+
+    const cryptoUnrealizedGainNaira = cryptoCurrentValueNaira - cryptoTotalInvestedNaira;
+    const cryptoUnrealizedGainUsd = cryptoCurrentValueUsd - cryptoTotalInvestedUsd;
+    const cryptoTotalCount = cryptoInvestments.length;
+
+    // 12. Crypto Day Trading (Completed Trades Journal)
+    const cryptoTradesTotalCount = cryptoDayTrades.length;
+    const cryptoTradesWinningCount = cryptoDayTrades.filter(t => (t.netProfitLoss || 0) > 0).length;
+    const cryptoTradesLosingCount = cryptoDayTrades.filter(t => (t.netProfitLoss || 0) < 0).length;
+    const cryptoTradesWinRate = cryptoTradesTotalCount > 0 
+      ? (cryptoTradesWinningCount / cryptoTradesTotalCount) * 100 
+      : 0;
+    const cryptoTradesGrossPlUsd = cryptoDayTrades.reduce((acc, t) => acc + (t.grossProfitLoss || 0), 0);
+    const cryptoTradesTotalFeesUsd = cryptoDayTrades.reduce((acc, t) => acc + (t.tradingFee || 0), 0);
+    const cryptoTradesNetPlUsd = cryptoDayTrades.reduce((acc, t) => acc + (t.netProfitLoss || 0), 0);
+    const cryptoTradesAvgProfitUsd = cryptoTradesTotalCount > 0 ? (cryptoTradesNetPlUsd / cryptoTradesTotalCount) : 0;
+    const netPlList = cryptoDayTrades.map(t => t.netProfitLoss || 0);
+    const cryptoTradesBestUsd = netPlList.length > 0 ? Math.max(...netPlList) : 0;
+    const cryptoTradesWorstUsd = netPlList.length > 0 ? Math.min(...netPlList) : 0;
+
+    // Total Capital Invested (Stage 1 & Stage 2: All active investment capital)
     const totalCapitalInvestedNaira = 
       ubaCostNaira +
       fsCostNaira +
@@ -368,7 +446,8 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       mfInvestedNaira +
       fgnInvestedNaira +
       goldBuyTotalNaira +
-      lockedInvestedNaira;
+      lockedInvestedNaira +
+      cryptoTotalInvestedNaira;
 
     // Total Current Value in Naira
     const totalCurrentValueNaira = 
@@ -381,16 +460,26 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       mfCurrentValueNaira +
       fgnInvestedNaira +
       (goldNetQty > 0 ? goldCurrentValueNaira : 0) +
-      lockedTotalValueNaira;
+      lockedTotalValueNaira +
+      cryptoCurrentValueNaira;
 
     const totalCurrentValueUsd = totalCurrentValueNaira / usdRate;
 
-    // Realized Profit
-    const totalRealizedProfitNaira = fsRealizedProfitNaira + ngRealizedProfitNaira + goldRealizedProfitNaira;
-    const totalRealizedProfitUsd = fsRealizedProfitUsd + ngRealizedProfitUsd + goldRealizedProfitUsd;
+    // Realized Profit (including Day Trading realized profit in Naira)
+    const cryptoRealizedProfitNaira = cryptoTradesNetPlUsd * usdRate;
+    const totalRealizedProfitNaira = fsRealizedProfitNaira + ngRealizedProfitNaira + goldRealizedProfitNaira + cryptoRealizedProfitNaira;
+    const totalRealizedProfitUsd = fsRealizedProfitUsd + ngRealizedProfitUsd + goldRealizedProfitUsd + cryptoTradesNetPlUsd;
 
     // Unrealized
-    const totalUnrealizedProfitNaira = mfGainOrLossNaira + (ubaCurrentValueNaira - ubaCostNaira) + (ebookCurrentValueNaira - ebookCostNaira);
+    const totalUnrealizedProfitNaira = mfGainOrLossNaira + (ubaCurrentValueNaira - ubaCostNaira) + (ebookCurrentValueNaira - ebookCostNaira) + cryptoUnrealizedGainNaira;
+
+    // Passive Income Aggregates (Pure cash flow generated from assets, not double counted as capital)
+    const totalAnnualPassiveIncomeNaira = fgnAnnualInterestNaira + cpInterestNaira + tbInterestNaira + lockedInterestNaira;
+    const totalAnnualPassiveIncomeUsd = totalAnnualPassiveIncomeNaira / usdRate;
+    const totalMonthlyPassiveIncomeNaira = totalAnnualPassiveIncomeNaira / 12;
+    const totalMonthlyPassiveIncomeUsd = totalAnnualPassiveIncomeUsd / 12;
+    const totalPassiveIncomeGeneratedNaira = fgnAnnualInterestNaira; // Primary steady annuity generated
+    const totalPassiveIncomeGeneratedUsd = fgnAnnualInterestNaira / usdRate;
 
     // Active counts
     const activeInvestmentsCount = 
@@ -403,7 +492,8 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       mutualFundRecords.filter(r => r.status === 'Active').length +
       fgnBondRecords.filter(r => r.status === 'Active').length +
       goldEtfBuys.length +
-      lockedSavingsRecords.filter(r => r.status === 'Active').length;
+      lockedSavingsRecords.filter(r => r.status === 'Active').length +
+      cryptoInvestments.length;
 
     const pendingMaturitiesCount = 
       commercialPaperRecords.filter(r => r.status === 'Active').length +
@@ -411,7 +501,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       lockedSavingsRecords.filter(r => r.status === 'Active').length;
 
     // Allocation calculation
-    const rawCategories: { category: InvestmentCategory; label: string; valueNaira: number; color: string }[] = [
+    const rawCategories: { category: InvestmentCategory | 'crypto_investments'; label: string; valueNaira: number; color: string }[] = [
       { category: 'fgn_bonds', label: 'FGN Savings Bonds', valueNaira: fgnInvestedNaira, color: CATEGORY_DETAILS.fgn_bonds.color },
       { category: 'commercial_papers', label: 'Commercial Papers', valueNaira: cpTotalAtMaturityNaira, color: CATEGORY_DETAILS.commercial_papers.color },
       { category: 'locked_savings', label: 'Locked Savings (Fintech)', valueNaira: lockedTotalValueNaira, color: CATEGORY_DETAILS.locked_savings.color },
@@ -424,6 +514,15 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       { category: 'nigerian_stocks', label: 'Nigerian Stocks', valueNaira: ngCostNaira, color: CATEGORY_DETAILS.nigerian_stocks.color },
     ];
 
+    if (cryptoCurrentValueNaira > 0 || cryptoTotalInvestedNaira > 0) {
+      rawCategories.push({
+        category: 'crypto_investments',
+        label: 'Crypto Investments',
+        valueNaira: cryptoCurrentValueNaira > 0 ? cryptoCurrentValueNaira : cryptoTotalInvestedNaira,
+        color: '#f59e0b'
+      });
+    }
+
     const totalAllocNaira = rawCategories.reduce((acc, c) => acc + c.valueNaira, 0) || 1;
 
     const assetAllocation = rawCategories.map(c => ({
@@ -433,20 +532,61 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }));
 
     // Currency Exposure
-    const usdPortionNaira = ubaCurrentValueNaira + fsCostNaira + ebookCurrentValueNaira + goldBuyTotalNaira;
-    const nairaPortionNaira = totalCurrentValueNaira - usdPortionNaira;
+    const usdPortionNaira = ubaCurrentValueNaira + fsCostNaira + ebookCurrentValueNaira + goldBuyTotalNaira + (cryptoCurrentValueNaira || cryptoTotalInvestedNaira);
+    const nairaPortionNaira = Math.max(0, totalCurrentValueNaira - usdPortionNaira);
     const usdPercent = Number(((usdPortionNaira / (totalCurrentValueNaira || 1)) * 100).toFixed(1));
-    const nairaPercent = 100 - usdPercent;
+    const nairaPercent = Math.max(0, 100 - usdPercent);
 
     return {
       totalCapitalInvestedNaira,
+      totalInvestedNaira: totalCapitalInvestedNaira,
+      totalInvestedUsd: totalCapitalInvestedNaira / usdRate,
       totalCurrentValueNaira,
       totalCurrentValueUsd,
+      totalGainOrLossNaira: totalCurrentValueNaira - totalCapitalInvestedNaira,
+      totalGainOrLossUsd: totalCurrentValueUsd - (totalCapitalInvestedNaira / usdRate),
+      totalPortfolioWorthUsd: totalCurrentValueUsd,
       totalRealizedProfitNaira,
       totalRealizedProfitUsd,
+      realizedProfitUsd: totalRealizedProfitUsd,
+      realizedProfitNaira: totalRealizedProfitNaira,
       totalUnrealizedProfitNaira,
+      // Passive Income
+      totalPassiveIncomeGeneratedNaira,
+      totalPassiveIncomeGeneratedUsd,
+      totalMonthlyPassiveIncomeNaira,
+      totalMonthlyPassiveIncomeUsd,
       totalQuarterlyPassiveIncomeNaira: fgnQuarterlyInterestNaira,
-      totalAnnualPassiveIncomeNaira: fgnAnnualInterestNaira + cpInterestNaira + tbInterestNaira + lockedInterestNaira,
+      totalQuarterlyPassiveIncomeUsd: fgnQuarterlyInterestNaira / usdRate,
+      totalAnnualPassiveIncomeNaira,
+      totalAnnualPassiveIncomeUsd,
+      fgnTotalInvestedNaira: fgnInvestedNaira,
+      fgnTotalInvestedUsd: fgnInvestedNaira / usdRate,
+      fgnQuarterlyInterestNaira,
+      fgnQuarterlyInterestUsd: fgnQuarterlyInterestNaira / usdRate,
+      fgnAnnualInterestNaira,
+      fgnAnnualInterestUsd: fgnAnnualInterestNaira / usdRate,
+      totalExpectedMaturityPayoutNaira: cpTotalAtMaturityNaira + tbTotalAtMaturityNaira + lockedTotalValueNaira,
+      totalExpectedMaturityPayoutUsd: (cpTotalAtMaturityNaira + tbTotalAtMaturityNaira + lockedTotalValueNaira) / usdRate,
+      // Crypto Metrics
+      cryptoTotalInvestedNaira,
+      cryptoTotalInvestedUsd,
+      cryptoCurrentValueNaira,
+      cryptoCurrentValueUsd,
+      cryptoUnrealizedGainNaira,
+      cryptoUnrealizedGainUsd,
+      cryptoTotalCount,
+      cryptoTradesTotalCount,
+      cryptoTradesWinningCount,
+      cryptoTradesLosingCount,
+      cryptoTradesWinRate,
+      cryptoTradesGrossPlUsd,
+      cryptoTradesTotalFeesUsd,
+      cryptoTradesNetPlUsd,
+      cryptoTradesAvgProfitUsd,
+      cryptoTradesBestUsd,
+      cryptoTradesWorstUsd,
+      // Counts & Visuals
       activeInvestmentsCount,
       pendingMaturitiesCount,
       assetAllocation,
@@ -462,7 +602,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     settings.currentUsdExchangeRate,
     ubaDcaRecords, foreignStockBuys, foreignStockSells, nigerianStockBuys, nigerianStockSells,
     ebookDcaRecords, commercialPaperRecords, treasuryBillRecords, mutualFundRecords, fgnBondRecords,
-    goldEtfBuys, goldEtfSells, lockedSavingsRecords
+    goldEtfBuys, goldEtfSells, lockedSavingsRecords, cryptoInvestments, cryptoDayTrades
   ]);
 
   // Firestore-backed Mutators
@@ -617,6 +757,65 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     await deleteUserRecord(user.uid, 'locked_savings', id);
   };
 
+  // Crypto Investments Mutators
+  const addCryptoInvestment = async (record: Omit<CryptoInvestmentRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `crypto-inv-${Date.now()}`;
+    await saveUserRecord(user.uid, 'crypto_investments', id, {
+      ...record,
+      createdAt: new Date().toISOString()
+    });
+  };
+
+  const updateCryptoInvestment = async (id: string, updates: Partial<CryptoInvestmentRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'crypto_investments', id, updates);
+  };
+
+  const deleteCryptoInvestment = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'crypto_investments', id);
+  };
+
+  // Crypto Day Trading Mutators
+  const addCryptoDayTrade = async (record: Omit<CryptoDayTradeRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `crypto-trade-${Date.now()}`;
+    await saveUserRecord(user.uid, 'crypto_day_trades', id, {
+      ...record,
+      createdAt: new Date().toISOString()
+    });
+  };
+
+  const updateCryptoDayTrade = async (id: string, updates: Partial<CryptoDayTradeRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'crypto_day_trades', id, updates);
+  };
+
+  const deleteCryptoDayTrade = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'crypto_day_trades', id);
+  };
+
+  const addMarketReference = async (refData: Omit<MarketReferenceRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = `mkt-ref-${Date.now()}`;
+    await saveUserRecord(user.uid, 'market_references', id, {
+      ...refData,
+      createdAt: new Date().toISOString()
+    });
+  };
+
+  const updateMarketReference = async (id: string, updates: Partial<MarketReferenceRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'market_references', id, updates);
+  };
+
+  const deleteMarketReference = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'market_references', id);
+  };
+
   const addDocument = async (docData: Omit<AppDocument, 'id' | 'uploadDate'>) => {
     if (!user) return;
     const id = `doc-${Date.now()}`;
@@ -655,6 +854,49 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const savePassiveIncomeCell = async (year: number, incomeSource: string, monthKey: keyof PassiveIncomeMatrixRecord['months'], value: number) => {
+    if (!user) return;
+    const docId = `${year}_${incomeSource.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const existing = passiveIncomeMatrixRecords.find(r => r.year === year && r.incomeSource.toLowerCase() === incomeSource.toLowerCase());
+    const months = existing ? { ...existing.months } : {
+      jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0,
+      jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0
+    };
+    months[monthKey] = Number(value) || 0;
+
+    await saveUserRecord(user.uid, 'passive_income_matrix', docId, {
+      year,
+      incomeSource,
+      months,
+      createdAt: existing ? existing.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  };
+
+  const addPassiveIncomeSource = async (year: number, incomeSource: string) => {
+    if (!user || !incomeSource.trim()) return;
+    const trimmed = incomeSource.trim();
+    const docId = `${year}_${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const existing = passiveIncomeMatrixRecords.find(r => r.year === year && r.incomeSource.toLowerCase() === trimmed.toLowerCase());
+    if (existing) return;
+
+    await saveUserRecord(user.uid, 'passive_income_matrix', docId, {
+      year,
+      incomeSource: trimmed,
+      months: {
+        jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0,
+        jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  };
+
+  const deletePassiveIncomeSource = async (id: string) => {
+    if (!user) return;
+    await deleteUserRecord(user.uid, 'passive_income_matrix', id);
+  };
+
   return (
     <WealthContext.Provider
       value={{
@@ -680,8 +922,12 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         goldEtfBuys,
         goldEtfSells,
         lockedSavingsRecords,
+        cryptoInvestments,
+        cryptoDayTrades,
+        passiveIncomeMatrixRecords,
         documents,
         documentRecords: documents,
+        marketReferences,
         settings,
         summary,
         addUbaDca,
@@ -711,6 +957,18 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addLockedSavings,
         updateLockedSavings,
         deleteLockedSavings,
+        addCryptoInvestment,
+        updateCryptoInvestment,
+        deleteCryptoInvestment,
+        addCryptoDayTrade,
+        updateCryptoDayTrade,
+        deleteCryptoDayTrade,
+        savePassiveIncomeCell,
+        addPassiveIncomeSource,
+        deletePassiveIncomeSource,
+        addMarketReference,
+        updateMarketReference,
+        deleteMarketReference,
         addDocument,
         deleteDocument,
         updateSettings,

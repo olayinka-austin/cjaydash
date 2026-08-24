@@ -210,11 +210,57 @@ export interface LockedSavingsRecord extends BaseRecord {
   status: 'Active' | 'Matured' | 'Liquidated';
 }
 
+// 11. CRYPTO INVESTMENTS (LONG-TERM HOLDINGS)
+export interface CryptoInvestmentRecord extends BaseRecord {
+  cryptoName: string; // e.g. 'Bitcoin', 'Ethereum', 'Solana', 'Tether'
+  ticker: string; // e.g. 'BTC', 'ETH', 'SOL', 'USDT'
+  investmentDate: string; // YYYY-MM-DD
+  quantity: number;
+  purchasePrice: number; // Purchase price per coin/token
+  purchaseCurrency: 'USD' | 'NGN';
+  exchange: string; // 'Binance', 'Bybit', 'KuCoin', 'Coinbase', 'Trust Wallet', 'Ledger', etc.
+  transactionFee: number; // Fee in purchaseCurrency
+  totalCost: number; // (quantity * purchasePrice) + transactionFee
+  totalCostNaira: number;
+  totalCostUsd: number;
+  currentPrice: number; // Current valuation price per unit (in purchaseCurrency / USD)
+  currentValue: number; // quantity * currentPrice
+  currentValueNaira: number;
+  currentValueUsd: number;
+  unrealizedProfitLoss: number; // currentValue - totalCost
+  unrealizedProfitLossNaira: number;
+  unrealizedProfitLossUsd: number;
+  roiPercentage: number; // (unrealizedProfitLoss / totalCost) * 100
+  notes?: string;
+}
+
+// 12. CRYPTO DAY TRADING (COMPLETED TRADES JOURNAL)
+export interface CryptoDayTradeRecord extends BaseRecord {
+  tradeDate: string; // YYYY-MM-DD
+  entryTime: string; // e.g. "09:30"
+  exitTime: string; // e.g. "11:45"
+  cryptoName: string; // e.g. 'Bitcoin', 'Ethereum', 'Solana'
+  ticker: string; // e.g. 'BTC', 'ETH', 'SOL'
+  positionType: 'Long' | 'Short';
+  entryPrice: number;
+  exitPrice: number;
+  quantity: number;
+  entryValue: number; // entryPrice * quantity
+  exitValue: number; // exitPrice * quantity
+  tradingFee: number;
+  grossProfitLoss: number; // Long: (exitPrice - entryPrice) * qty; Short: (entryPrice - exitPrice) * qty
+  netProfitLoss: number; // grossProfitLoss - tradingFee (REALIZED P/L)
+  roiPercentage: number; // (netProfitLoss / entryValue) * 100
+  exchange: string; // 'Binance', 'Bybit', 'OKX', etc.
+  strategy?: string; // 'Breakout', 'Scalping', 'Support Bounce', 'Trend Following', 'Range', etc.
+  notes?: string;
+}
+
 // Document Attachment
 export interface AppDocument {
   id: string;
   name: string;
-  category: InvestmentCategory;
+  category: InvestmentCategory | 'crypto_investments' | 'crypto_day_trades';
   relatedRecordId?: string;
   fileType: string;
   fileSize: string;
@@ -223,35 +269,95 @@ export interface AppDocument {
   url?: string;
 }
 
+// Market Reference Data
+export type MarketReferenceType = 'usd_ngn' | 'gold_usd';
+
+export interface MarketReferenceRecord extends BaseRecord {
+  date: string; // YYYY-MM-DD
+  rate: number; // For USD/NGN: ₦/$, For Gold/USD: $/oz
+  type: MarketReferenceType;
+  source?: string;
+  remark?: string;
+  relatedInvestmentCategory?: InvestmentCategory | 'crypto_investments' | 'crypto_day_trades';
+  relatedRecordId?: string;
+}
+
 // System Settings
 export interface AppSettings {
   currentUsdExchangeRate: number; // e.g. 1780.00
   currentGoldSpotPriceUsd: number; // e.g. 3369.67
-  currencyDisplay: 'ALL' | 'NGN_PRIMARY' | 'USD_PRIMARY';
+  currencyDisplay: 'ALL' | 'NGN' | 'USD' | 'NGN_PRIMARY' | 'USD_PRIMARY';
   notificationsEnabled: boolean;
   maturityReminderDays: number; // e.g. 14 days
   lastBackupDate?: string;
+  autoRefreshRates?: boolean;
+  lastRateUpdate?: string;
+  theme?: 'light' | 'dark' | 'system';
+  preferredDisplayName?: string;
 }
 
 // Portfolio Aggregates
 export interface PortfolioSummary {
   totalCapitalInvestedNaira: number;
+  totalInvestedNaira: number;
+  totalInvestedUsd: number;
   totalCurrentValueNaira: number;
   totalCurrentValueUsd: number;
+  totalGainOrLossNaira: number;
+  totalGainOrLossUsd: number;
+  totalPortfolioWorthUsd: number;
   totalRealizedProfitNaira: number;
   totalRealizedProfitUsd: number;
+  realizedProfitUsd: number;
+  realizedProfitNaira: number;
   totalUnrealizedProfitNaira: number;
+  // Passive Income Aggregates
+  totalPassiveIncomeGeneratedNaira: number;
+  totalPassiveIncomeGeneratedUsd: number;
+  totalMonthlyPassiveIncomeNaira: number;
+  totalMonthlyPassiveIncomeUsd: number;
   totalQuarterlyPassiveIncomeNaira: number;
+  totalQuarterlyPassiveIncomeUsd: number;
   totalAnnualPassiveIncomeNaira: number;
+  totalAnnualPassiveIncomeUsd: number;
+  fgnTotalInvestedNaira: number;
+  fgnTotalInvestedUsd: number;
+  fgnQuarterlyInterestNaira: number;
+  fgnQuarterlyInterestUsd: number;
+  fgnAnnualInterestNaira: number;
+  fgnAnnualInterestUsd: number;
+  totalExpectedMaturityPayoutNaira: number;
+  totalExpectedMaturityPayoutUsd: number;
+  // Crypto Aggregates
+  cryptoTotalInvestedNaira: number;
+  cryptoTotalInvestedUsd: number;
+  cryptoCurrentValueNaira: number;
+  cryptoCurrentValueUsd: number;
+  cryptoUnrealizedGainNaira: number;
+  cryptoUnrealizedGainUsd: number;
+  cryptoTotalCount: number;
+  // Crypto Day Trading Aggregates
+  cryptoTradesTotalCount: number;
+  cryptoTradesWinningCount: number;
+  cryptoTradesLosingCount: number;
+  cryptoTradesWinRate: number;
+  cryptoTradesGrossPlUsd: number;
+  cryptoTradesTotalFeesUsd: number;
+  cryptoTradesNetPlUsd: number;
+  cryptoTradesAvgProfitUsd: number;
+  cryptoTradesBestUsd: number;
+  cryptoTradesWorstUsd: number;
+  // Counts & Visuals
   activeInvestmentsCount: number;
   pendingMaturitiesCount: number;
   assetAllocation: {
-    category: InvestmentCategory;
+    category: InvestmentCategory | 'crypto_investments';
     label: string;
     valueNaira: number;
     valueUsd: number;
     percentage: number;
     color: string;
+    tag?: string;
   }[];
   currencyExposure: {
     nairaPortionNaira: number;
@@ -260,4 +366,26 @@ export interface PortfolioSummary {
     nairaPercent: number;
     usdPercent: number;
   };
+}
+
+// 13. PASSIVE INCOME ANNUAL MONTHLY MATRIX RECORD
+export interface PassiveIncomeMatrixRecord extends BaseRecord {
+  year: number;
+  incomeSource: string; // e.g. 'YouTube Earnings', 'E-Book Earnings', 'Rental Earnings', 'Real Estate Earnings'
+  months: {
+    jan: number;
+    feb: number;
+    mar: number;
+    apr: number;
+    may: number;
+    jun: number;
+    jul: number;
+    aug: number;
+    sep: number;
+    oct: number;
+    nov: number;
+    dec: number;
+  };
+  currency?: 'NGN' | 'USD';
+  notes?: string;
 }

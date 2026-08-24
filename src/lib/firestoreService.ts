@@ -25,8 +25,11 @@ import {
   GoldEtfBuyRecord,
   GoldEtfSellRecord,
   LockedSavingsRecord,
+  CryptoInvestmentRecord,
+  CryptoDayTradeRecord,
   AppDocument,
-  AppSettings
+  AppSettings,
+  MarketReferenceRecord
 } from '../types';
 
 export enum OperationType {
@@ -147,7 +150,10 @@ export const bulkImportToFirestore = async (uid: string, payload: {
   goldEtfBuys?: GoldEtfBuyRecord[];
   goldEtfSells?: GoldEtfSellRecord[];
   lockedSavingsRecords?: LockedSavingsRecord[];
+  cryptoInvestments?: CryptoInvestmentRecord[];
+  cryptoDayTrades?: CryptoDayTradeRecord[];
   documents?: AppDocument[];
+  marketReferences?: MarketReferenceRecord[];
   settings?: AppSettings;
 }) => {
   if (!uid) throw new Error('Cannot perform bulk import: Authenticated UID is required.');
@@ -167,7 +173,10 @@ export const bulkImportToFirestore = async (uid: string, payload: {
     { name: 'gold_etf_buys', items: payload.goldEtfBuys || [] },
     { name: 'gold_etf_sells', items: payload.goldEtfSells || [] },
     { name: 'locked_savings', items: payload.lockedSavingsRecords || [] },
+    { name: 'crypto_investments', items: payload.cryptoInvestments || [] },
+    { name: 'crypto_day_trades', items: payload.cryptoDayTrades || [] },
     { name: 'documents', items: payload.documents || [] },
+    { name: 'market_references', items: payload.marketReferences || [] },
   ];
 
   try {

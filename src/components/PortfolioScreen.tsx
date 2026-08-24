@@ -3,7 +3,7 @@ import { useWealth } from '../context/WealthContext';
 import { AllocationDonutChart } from './AllocationDonutChart';
 import { PerformanceChart } from './PerformanceChart';
 import { MetricCard } from './MetricCard';
-import { CATEGORY_DETAILS, formatNaira, formatUSD } from '../utils/calculations';
+import { CATEGORY_DETAILS, formatNaira, formatUSD, formatFinancialValue } from '../utils/calculations';
 import { ArrowUpRight, DollarSign, Layers, ShieldCheck, TrendingUp } from 'lucide-react';
 import { InvestmentCategory } from '../types';
 
@@ -14,6 +14,8 @@ export const PortfolioScreen: React.FC = () => {
     setSelectedCategory(catKey as InvestmentCategory);
     setActiveScreen('investments');
   };
+
+  const isUsdPrimary = settings?.currencyDisplay === 'USD' || settings?.currencyDisplay === 'USD_PRIMARY';
 
   return (
     <div className="space-y-6">
@@ -28,7 +30,7 @@ export const PortfolioScreen: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <span className="text-[10px] uppercase tracking-wider text-[#747878] font-semibold">Total Portfolio Net Worth</span>
-            <div className="text-lg font-bold font-mono text-[#1a1c1c]">{formatNaira(summary.totalCurrentValueNaira)}</div>
+            <div className="text-lg font-bold font-mono text-[#1a1c1c]">{formatFinancialValue(summary.totalCurrentValueNaira, settings)}</div>
           </div>
         </div>
       </div>
@@ -36,13 +38,13 @@ export const PortfolioScreen: React.FC = () => {
       {/* Top Level Portfolio Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label="TOTAL INVESTED CAPITAL (NGN)"
-          value={formatNaira(summary.totalInvestedNaira)}
+          label={isUsdPrimary ? "TOTAL INVESTED CAPITAL (USD)" : "TOTAL INVESTED CAPITAL (NGN)"}
+          value={formatFinancialValue(summary.totalInvestedNaira, settings)}
           subtitle="Cumulative cost basis across all asset classes"
         />
         <MetricCard
-          label="TOTAL NET WORTH (NGN)"
-          value={formatNaira(summary.totalCurrentValueNaira)}
+          label={isUsdPrimary ? "TOTAL NET WORTH (USD)" : "TOTAL NET WORTH (NGN)"}
+          value={formatFinancialValue(summary.totalCurrentValueNaira, settings)}
           subtitle={`Converted @ ₦${(settings?.currentUsdExchangeRate ?? 1780).toLocaleString()}/$`}
           trend={{
             value: `+${((summary.totalGainOrLossNaira / (summary.totalInvestedNaira || 1)) * 100).toFixed(1)}%`,
@@ -53,7 +55,7 @@ export const PortfolioScreen: React.FC = () => {
         />
         <MetricCard
           label="USD ASSETS VALUATION"
-          value={formatUSD(summary.totalPortfolioWorthUsd)}
+          value={formatFinancialValue(summary.currencyExposure.usdPortionNaira, settings)}
           subtitle="Direct foreign stocks, UBA DCA &amp; Gold ETFs"
         />
         <MetricCard
@@ -94,7 +96,7 @@ export const PortfolioScreen: React.FC = () => {
                 <th className="py-3 px-4">TAG</th>
                 <th className="py-3 px-4">ASSET CLASS</th>
                 <th className="py-3 px-4">CURRENCY</th>
-                <th className="py-3 px-4 font-mono text-right">CURRENT VALUE (₦)</th>
+                <th className="py-3 px-4 font-mono text-right">CURRENT VALUE</th>
                 <th className="py-3 px-4 font-mono text-right">WEIGHT (%)</th>
                 <th className="py-3 px-4 text-center">ACTION</th>
               </tr>
@@ -126,7 +128,7 @@ export const PortfolioScreen: React.FC = () => {
                       )}
                     </td>
                     <td className="py-3.5 px-4 font-mono font-semibold text-[#1a1c1c] text-right tabular-nums">
-                      {formatNaira(item.valueNaira)}
+                      {formatFinancialValue(item.valueNaira, settings)}
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-[#1a1c1c] text-right">
                       {item.percentage}%
@@ -144,7 +146,7 @@ export const PortfolioScreen: React.FC = () => {
             <tfoot className="bg-[#f4f3f2] font-bold border-t-2 border-[#e3e2e1] text-xs">
               <tr>
                 <td colSpan={3} className="py-3.5 px-4 font-bold text-[#1a1c1c]">TOTAL CONSOLIDATED PORTFOLIO</td>
-                <td className="py-3.5 px-4 font-mono text-[#1a1c1c] text-right text-sm">{formatNaira(summary.totalCurrentValueNaira)}</td>
+                <td className="py-3.5 px-4 font-mono text-[#1a1c1c] text-right text-sm">{formatFinancialValue(summary.totalCurrentValueNaira, settings)}</td>
                 <td className="py-3.5 px-4 font-mono text-[#1a1c1c] text-right">100.0%</td>
                 <td className="py-3.5 px-4 text-center text-[#1b6b51]">Audited</td>
               </tr>
