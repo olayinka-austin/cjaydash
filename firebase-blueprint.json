@@ -1,0 +1,448 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile & Settings",
+      "description": "User preferences, exchange rates, and theme settings",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "settings": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "ubaDcaRecord": {
+      "title": "UBA Domiciliary DCA Record",
+      "description": "Monthly USD dollar cost averaging into UBA Dom account",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string" },
+        "amountUsd": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "totalCostNaira": { "type": "number" },
+        "channel": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "foreignStockBuyRecord": {
+      "title": "Foreign Stock Buy",
+      "description": "US and Global equities purchase transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ticker": { "type": "string" },
+        "companyName": { "type": "string" },
+        "date": { "type": "string" },
+        "qty": { "type": "number" },
+        "priceUsd": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "totalAmountNaira": { "type": "number" },
+        "broker": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "foreignStockSellRecord": {
+      "title": "Foreign Stock Sell",
+      "description": "US and Global equities sale transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ticker": { "type": "string" },
+        "companyName": { "type": "string" },
+        "date": { "type": "string" },
+        "qty": { "type": "number" },
+        "sellPriceUsd": { "type": "number" },
+        "costPriceUsd": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "profitOrLossUsd": { "type": "number" },
+        "profitOrLossNaira": { "type": "number" },
+        "broker": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "nigerianStockBuyRecord": {
+      "title": "Nigerian Stock Buy",
+      "description": "NGX equity purchase record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ticker": { "type": "string" },
+        "companyName": { "type": "string" },
+        "date": { "type": "string" },
+        "qty": { "type": "number" },
+        "priceNaira": { "type": "number" },
+        "totalAmountNaira": { "type": "number" },
+        "broker": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "nigerianStockSellRecord": {
+      "title": "Nigerian Stock Sell",
+      "description": "NGX equity sell record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ticker": { "type": "string" },
+        "companyName": { "type": "string" },
+        "date": { "type": "string" },
+        "qty": { "type": "number" },
+        "sellPriceNaira": { "type": "number" },
+        "costPriceNaira": { "type": "number" },
+        "profitOrLossNaira": { "type": "number" },
+        "profitOrLossUsd": { "type": "number" },
+        "broker": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "ebookDcaRecord": {
+      "title": "Ebook DCA Stock Record",
+      "description": "Ebook dividend reinvestment and DCA stream",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ticker": { "type": "string" },
+        "companyName": { "type": "string" },
+        "date": { "type": "string" },
+        "amountUsd": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "totalCostNaira": { "type": "number" },
+        "broker": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "commercialPaperRecord": {
+      "title": "Commercial Paper Record",
+      "description": "Corporate short-term debt instrument with yield",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "issuer": { "type": "string" },
+        "amountInvestedNaira": { "type": "number" },
+        "ratePercent": { "type": "number" },
+        "tenorDays": { "type": "number" },
+        "startDate": { "type": "string" },
+        "maturityDate": { "type": "string" },
+        "interestEarnedNaira": { "type": "number" },
+        "totalAtMaturityNaira": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "treasuryBillRecord": {
+      "title": "Treasury Bill Record",
+      "description": "Sovereign government treasury bill investment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "instrumentName": { "type": "string" },
+        "amountInvestedNaira": { "type": "number" },
+        "ratePercent": { "type": "number" },
+        "tenorDays": { "type": "number" },
+        "startDate": { "type": "string" },
+        "maturityDate": { "type": "string" },
+        "interestEarnedNaira": { "type": "number" },
+        "totalAtMaturityNaira": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "mutualFundRecord": {
+      "title": "Mutual Fund Record",
+      "description": "Professional money market or equity fund position",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "fundName": { "type": "string" },
+        "fundManager": { "type": "string" },
+        "fundType": { "type": "string" },
+        "amountInvestedNaira": { "type": "number" },
+        "currentValueNaira": { "type": "number" },
+        "gainOrLossNaira": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "fgnBondRecord": {
+      "title": "FGN Bond Record",
+      "description": "Federal Government of Nigeria Savings Bond quarterly annuity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "bondName": { "type": "string" },
+        "amountInvestedNaira": { "type": "number" },
+        "couponRatePercent": { "type": "number" },
+        "tenorYears": { "type": "number" },
+        "startDate": { "type": "string" },
+        "maturityDate": { "type": "string" },
+        "quarterlyInterestNaira": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "goldEtfBuyRecord": {
+      "title": "Gold ETF Buy",
+      "description": "Commodity gold ETF purchase record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ticker": { "type": "string" },
+        "etfName": { "type": "string" },
+        "date": { "type": "string" },
+        "qty": { "type": "number" },
+        "priceUsd": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "totalAmountNaira": { "type": "number" },
+        "broker": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "goldEtfSellRecord": {
+      "title": "Gold ETF Sell",
+      "description": "Commodity gold ETF sell record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ticker": { "type": "string" },
+        "etfName": { "type": "string" },
+        "date": { "type": "string" },
+        "qty": { "type": "number" },
+        "sellPriceUsd": { "type": "number" },
+        "costPriceUsd": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "profitOrLossUsd": { "type": "number" },
+        "profitOrLossNaira": { "type": "number" },
+        "broker": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "lockedSavingsRecord": {
+      "title": "Locked Savings Record",
+      "description": "High yield locked digital bank or fintech deposit",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "platform": { "type": "string" },
+        "title": { "type": "string" },
+        "amountInvestedNaira": { "type": "number" },
+        "interestRatePercent": { "type": "number" },
+        "tenorDays": { "type": "number" },
+        "startDate": { "type": "string" },
+        "maturityDate": { "type": "string" },
+        "interestNaira": { "type": "number" },
+        "expectedInterestPlusCapitalNaira": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "cryptoInvestmentRecord": {
+      "title": "Crypto Investment Holding",
+      "description": "Long-term spot crypto investment holding with target prices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "assetName": { "type": "string" },
+        "symbol": { "type": "string" },
+        "category": { "type": "string" },
+        "purchaseDate": { "type": "string" },
+        "quantity": { "type": "number" },
+        "buyPrice": { "type": "number" },
+        "totalCost": { "type": "number" },
+        "purchaseCurrency": { "type": "string" },
+        "currentPrice": { "type": "number" },
+        "currentValue": { "type": "number" },
+        "targetPrice": { "type": "number" },
+        "custodyLocation": { "type": "string" },
+        "walletAddress": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "cryptoDayTradeRecord": {
+      "title": "Crypto Day Trade Record",
+      "description": "Executed intra-day trade journal record with strategy and PnL",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "tradeDate": { "type": "string" },
+        "pair": { "type": "string" },
+        "exchange": { "type": "string" },
+        "direction": { "type": "string" },
+        "positionType": { "type": "string" },
+        "leverage": { "type": "number" },
+        "entryPrice": { "type": "number" },
+        "exitPrice": { "type": "number" },
+        "positionSize": { "type": "number" },
+        "grossProfitLoss": { "type": "number" },
+        "tradingFee": { "type": "number" },
+        "netProfitLoss": { "type": "number" },
+        "roiPercent": { "type": "number" },
+        "strategy": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "passiveIncomeMatrixRecord": {
+      "title": "Passive Income Matrix Row",
+      "description": "Monthly matrix tracking 12-month cash flows for a specific stream",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "year": { "type": "number" },
+        "incomeSource": { "type": "string" },
+        "months": { "type": "object" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "documentRecord": {
+      "title": "App Document",
+      "description": "Uploaded investment contract, certificate, or statement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "uploadDate": { "type": "string" },
+        "size": { "type": "string" },
+        "type": { "type": "string" },
+        "dataUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "marketReferenceRecord": {
+      "title": "Market Reference Record",
+      "description": "Live asset quote, NAV, or benchmark pricing reference",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "category": { "type": "string" },
+        "symbol": { "type": "string" },
+        "name": { "type": "string" },
+        "currentPrice": { "type": "number" },
+        "currency": { "type": "string" },
+        "lastUpdated": { "type": "string" },
+        "source": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "userProfile",
+      "description": "User root document with application settings"
+    },
+    "/users/{userId}/uba_dca/{docId}": {
+      "schema": "ubaDcaRecord",
+      "description": "User's UBA Domiciliary DCA investments"
+    },
+    "/users/{userId}/foreign_stock_buys/{docId}": {
+      "schema": "foreignStockBuyRecord",
+      "description": "User's US/foreign stock purchase records"
+    },
+    "/users/{userId}/foreign_stock_sells/{docId}": {
+      "schema": "foreignStockSellRecord",
+      "description": "User's US/foreign stock sell records"
+    },
+    "/users/{userId}/nigerian_stock_buys/{docId}": {
+      "schema": "nigerianStockBuyRecord",
+      "description": "User's NGX stock purchase records"
+    },
+    "/users/{userId}/nigerian_stock_sells/{docId}": {
+      "schema": "nigerianStockSellRecord",
+      "description": "User's NGX stock sell records"
+    },
+    "/users/{userId}/ebook_dca/{docId}": {
+      "schema": "ebookDcaRecord",
+      "description": "User's Ebook DCA equity records"
+    },
+    "/users/{userId}/commercial_papers/{docId}": {
+      "schema": "commercialPaperRecord",
+      "description": "User's Commercial Paper investments"
+    },
+    "/users/{userId}/treasury_bills/{docId}": {
+      "schema": "treasuryBillRecord",
+      "description": "User's Treasury Bill investments"
+    },
+    "/users/{userId}/mutual_funds/{docId}": {
+      "schema": "mutualFundRecord",
+      "description": "User's Mutual Fund portfolios"
+    },
+    "/users/{userId}/fgn_bonds/{docId}": {
+      "schema": "fgnBondRecord",
+      "description": "User's FGN Savings Bonds"
+    },
+    "/users/{userId}/gold_etf_buys/{docId}": {
+      "schema": "goldEtfBuyRecord",
+      "description": "User's Gold ETF purchase records"
+    },
+    "/users/{userId}/gold_etf_sells/{docId}": {
+      "schema": "goldEtfSellRecord",
+      "description": "User's Gold ETF sell records"
+    },
+    "/users/{userId}/locked_savings/{docId}": {
+      "schema": "lockedSavingsRecord",
+      "description": "User's locked savings and fixed deposit yields"
+    },
+    "/users/{userId}/crypto_investments/{docId}": {
+      "schema": "cryptoInvestmentRecord",
+      "description": "User's long term spot cryptocurrency holdings"
+    },
+    "/users/{userId}/crypto_day_trades/{docId}": {
+      "schema": "cryptoDayTradeRecord",
+      "description": "User's crypto day trading journal logs"
+    },
+    "/users/{userId}/passive_income_matrix/{docId}": {
+      "schema": "passiveIncomeMatrixRecord",
+      "description": "User's annual passive income monthly matrix rows"
+    },
+    "/users/{userId}/documents/{docId}": {
+      "schema": "documentRecord",
+      "description": "User's uploaded financial documents"
+    },
+    "/users/{userId}/market_references/{docId}": {
+      "schema": "marketReferenceRecord",
+      "description": "User's market reference and live price trackers"
+    },
+    "/test/{docId}": {
+      "schema": "userProfile",
+      "description": "Connection test path"
+    }
+  }
+}

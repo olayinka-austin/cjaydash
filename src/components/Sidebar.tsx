@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   Settings,
   PlusCircle,
+  Plus,
   Globe,
   Coins,
   Activity,
@@ -27,12 +28,14 @@ import { formatNaira, formatFinancialValue } from '../utils/calculations';
 
 interface SidebarProps {
   onOpenAddModal: () => void;
+  onOpenAddPassiveIncomeModal?: () => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   onOpenAddModal, 
+  onOpenAddPassiveIncomeModal,
   isOpenMobile = false, 
   onCloseMobile = () => {} 
 }) => {
@@ -89,6 +92,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onCloseMobile();
   };
 
+  const handleAddPassiveIncomeClick = () => {
+    if (onOpenAddPassiveIncomeModal) {
+      onOpenAddPassiveIncomeModal();
+    } else {
+      setActiveScreen('income');
+    }
+    onCloseMobile();
+  };
+
   const sidebarContent = (
     <div className="flex flex-col h-full bg-[#faf9f8] dark:bg-[#151817] text-[#1a1c1c] dark:text-[#e1e3e2] select-none transition-colors">
       {/* Brand Header */}
@@ -113,14 +125,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Quick Add Action */}
-      <div className="px-3 sm:px-4 py-3">
+      {/* Quick Add Actions */}
+      <div className="px-3 sm:px-4 py-3 space-y-2">
         <button
           onClick={handleAddClick}
-          className="w-full bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-3 py-2.5 rounded text-[12px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 shadow-sm cursor-pointer min-h-[42px]"
+          className="w-full bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-3 py-2.5 rounded text-[12px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 shadow-sm cursor-pointer min-h-[40px]"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Add Investment</span>
+        </button>
+
+        <button
+          onClick={handleAddPassiveIncomeClick}
+          className="w-full bg-[#ffffff] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-3 py-2 rounded text-[11px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer min-h-[36px]"
+        >
+          <Plus className="w-3.5 h-3.5 text-[#1b6b51] dark:text-[#60d3a7]" />
+          <span>Add Passive Income Source</span>
         </button>
       </div>
 

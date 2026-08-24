@@ -118,6 +118,7 @@ interface WealthContextType {
   deleteMutualFund: (id: string) => Promise<void>;
   
   addFgnBond: (record: Omit<FgnBondRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateFgnBond: (id: string, updates: Partial<FgnBondRecord>) => Promise<void>;
   deleteFgnBond: (id: string) => Promise<void>;
   
   addGoldEtfBuy: (record: Omit<GoldEtfBuyRecord, 'id' | 'createdAt'>) => Promise<void>;
@@ -140,7 +141,7 @@ interface WealthContextType {
 
   // Passive Income Matrix Mutators
   savePassiveIncomeCell: (year: number, incomeSource: string, monthKey: keyof PassiveIncomeMatrixRecord['months'], value: number) => Promise<void>;
-  addPassiveIncomeSource: (year: number, incomeSource: string) => Promise<void>;
+  addPassiveIncomeSource: (year: number, incomeSource: string, notes?: string) => Promise<void>;
   deletePassiveIncomeSource: (id: string) => Promise<void>;
 
   // Market Reference Records
@@ -718,6 +719,11 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     await saveUserRecord(user.uid, 'fgn_bonds', id, { ...record, createdAt: new Date().toISOString() });
   };
 
+  const updateFgnBond = async (id: string, updates: Partial<FgnBondRecord>) => {
+    if (!user) return;
+    await saveUserRecord(user.uid, 'fgn_bonds', id, updates);
+  };
+
   const deleteFgnBond = async (id: string) => {
     if (!user) return;
     await deleteUserRecord(user.uid, 'fgn_bonds', id);
@@ -873,7 +879,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   };
 
-  const addPassiveIncomeSource = async (year: number, incomeSource: string) => {
+  const addPassiveIncomeSource = async (year: number, incomeSource: string, notes?: string) => {
     if (!user || !incomeSource.trim()) return;
     const trimmed = incomeSource.trim();
     const docId = `${year}_${trimmed.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
@@ -887,6 +893,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         jan: 0, feb: 0, mar: 0, apr: 0, may: 0, jun: 0,
         jul: 0, aug: 0, sep: 0, oct: 0, nov: 0, dec: 0
       },
+      notes: notes || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -950,6 +957,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateMutualFund,
         deleteMutualFund,
         addFgnBond,
+        updateFgnBond,
         deleteFgnBond,
         addGoldEtfBuy,
         addGoldEtfSell,

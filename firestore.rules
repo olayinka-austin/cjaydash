@@ -2,19 +2,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User root document and profile settings
+    // Connection health check route (non-sensitive read)
+    match /test/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // User root document and user-owned investment collections
     match /users/{userId} {
       allow read, write: if request.auth == null || request.auth.uid == userId;
 
-      // Subcollections for each of the 10 investment classes + vault documents
+      // Subcollections for each of the 10 investment classes, crypto portfolios, matrix, and documents
       match /{subcollection}/{docId} {
         allow read, write: if request.auth == null || request.auth.uid == userId;
       }
     }
 
-    // Explicit block for any non-user top level collection
+    // Explicit block for any other non-user top level collection
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
+

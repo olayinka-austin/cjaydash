@@ -76,10 +76,20 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
   const [ticker, setTicker] = useState<string>('GLD');
   const [savingsPackage, setSavingsPackage] = useState<string>('LOCKED SAVINGS');
   const [taxDeduction, setTaxDeduction] = useState<string>('0');
+  const [taxApplicable, setTaxApplicable] = useState<boolean>(false);
+  const [taxRatePercent, setTaxRatePercent] = useState<string>('10.00');
 
   useEffect(() => {
     if (defaultCategory && defaultCategory !== 'all') {
       setCategory(defaultCategory);
+      // Initialize tax defaults based on investment category
+      if (defaultCategory === 'locked_savings') {
+        setTaxApplicable(true);
+        setTaxRatePercent('10.00');
+      } else {
+        setTaxApplicable(false);
+        setTaxRatePercent('10.00');
+      }
     }
   }, [defaultCategory]);
 
@@ -206,7 +216,8 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         const amt = parseFloat(amount) || 100000;
         const tDays = parseInt(tenorDays) || 91;
         const rPct = parseFloat(ratePercent) || 15.00;
-        const calc = calculateCommercialPaperMaturity(amt, tDays, rPct);
+        const tRate = taxApplicable ? (parseFloat(taxRatePercent) || 0) : 0;
+        const calc = calculateCommercialPaperMaturity(amt, tDays, rPct, taxApplicable, tRate);
         addCommercialPaper({
           sNo: Date.now() % 1000,
           month: monthName || 'Jan-2025',
@@ -214,6 +225,11 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
           amountInvestedNaira: amt,
           tenorDays: tDays,
           ratePercent: rPct,
+          taxApplicable,
+          taxRatePercent: tRate,
+          grossInterestEarnedNaira: calc.grossInterestEarnedNaira,
+          taxAmountNaira: calc.taxAmountNaira,
+          netInterestEarnedNaira: calc.netInterestEarnedNaira,
           maturityDate: maturityDate || date,
           interestEarnedNaira: calc.interestEarnedNaira,
           totalAtMaturityNaira: calc.totalAtMaturityNaira,
@@ -228,7 +244,8 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         const amt = parseFloat(amount) || 100000;
         const tDays = parseInt(tenorDays) || 91;
         const rPct = parseFloat(ratePercent) || 15.00;
-        const calc = calculateCommercialPaperMaturity(amt, tDays, rPct);
+        const tRate = taxApplicable ? (parseFloat(taxRatePercent) || 0) : 0;
+        const calc = calculateCommercialPaperMaturity(amt, tDays, rPct, taxApplicable, tRate);
         addTreasuryBill({
           sNo: Date.now() % 1000,
           month: monthName || 'Jan-2025',
@@ -236,6 +253,11 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
           amountInvestedNaira: amt,
           tenorDays: tDays,
           ratePercent: rPct,
+          taxApplicable,
+          taxRatePercent: tRate,
+          grossInterestEarnedNaira: calc.grossInterestEarnedNaira,
+          taxAmountNaira: calc.taxAmountNaira,
+          netInterestEarnedNaira: calc.netInterestEarnedNaira,
           maturityDate: maturityDate || date,
           interestEarnedNaira: calc.interestEarnedNaira,
           totalAtMaturityNaira: calc.totalAtMaturityNaira,
@@ -271,7 +293,8 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         const amt = parseFloat(amount) || 1500000;
         const rPct = parseFloat(ratePercent) || 18.00;
         const tYrs = parseInt(tenorYears) || 3;
-        const qInt = calculateFgnBondQuarterlyInterest(amt, rPct);
+        const tRate = taxApplicable ? (parseFloat(taxRatePercent) || 0) : 0;
+        const calc = calculateFgnBondQuarterlyInterest(amt, rPct, taxApplicable, tRate);
         const pMonths = getFgnBondPaymentMonths(investMonth);
         addFgnBond({
           sNo: Date.now() % 1000,
@@ -281,7 +304,12 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
           amountInvestedNaira: amt,
           tenorYears: tYrs,
           interestRatePercent: rPct,
-          quarterlyInterestNaira: qInt,
+          taxApplicable,
+          taxRatePercent: tRate,
+          grossQuarterlyInterestNaira: calc.grossQuarterlyInterest,
+          taxAmountNaira: calc.taxAmount,
+          netQuarterlyInterestNaira: calc.netQuarterlyInterest,
+          quarterlyInterestNaira: calc.quarterlyInterestNaira,
           paymentMonths: pMonths,
           status: 'Active'
         });
@@ -334,8 +362,9 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         const amt = parseFloat(amount) || 1000000;
         const rPct = parseFloat(ratePercent) || 15.00;
         const dDays = parseInt(tenorDays) || 60;
+        const tRate = taxApplicable ? (parseFloat(taxRatePercent) || 0) : 0;
         const tax = parseFloat(taxDeduction) || 0;
-        const calc = calculateLockedSavingsInterest(amt, rPct, dDays, tax);
+        const calc = calculateLockedSavingsInterest(amt, rPct, dDays, taxApplicable, tRate, tax);
         addLockedSavings({
           sNo: Date.now() % 1000,
           investmentDate: date,
@@ -344,8 +373,12 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
           amountInvestedNaira: amt,
           interestRatePercentPerAnnum: rPct,
           durationDays: dDays,
+          grossInterestNaira: calc.grossInterest,
+          taxApplicable,
+          taxRatePercent: tRate,
+          taxAmountNaira: calc.taxAmount,
           expectedInterestPlusCapitalNaira: calc.expectedInterestPlusCapitalNaira,
-          lessTaxNaira: tax,
+          lessTaxNaira: calc.taxAmount,
           interestNaira: calc.netInterest,
           status: 'Active',
           remark
@@ -608,7 +641,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Rate (%)</label>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Investment Rate (%)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -638,6 +671,47 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                     />
                   </div>
                 )}
+                {/* Tax Configuration for CP / T-Bills */}
+                <div className="col-span-1 sm:col-span-2 bg-[#f4f3f2]/70 border border-[#e3e2e1] rounded p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-semibold text-[#1a1c1c] uppercase tracking-wider">Withholding Tax (WHT)</span>
+                      <p className="text-[11px] text-[#747878]">Separate manually editable tax rate per investment</p>
+                    </div>
+                    <label className="text-xs font-semibold text-[#1a1c1c] cursor-pointer flex items-center gap-2 bg-[#ffffff] border border-[#e3e2e1] px-2.5 py-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={taxApplicable}
+                        onChange={(e) => setTaxApplicable(e.target.checked)}
+                        className="rounded border-[#c4c7c7] text-[#1b6b51] focus:ring-[#1b6b51]"
+                      />
+                      <span>Tax Applicable</span>
+                    </label>
+                  </div>
+                  {taxApplicable && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#e3e2e1]">
+                      <div>
+                        <label className="text-[11px] font-semibold text-[#747878] uppercase">Tax Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={taxRatePercent}
+                          onChange={(e) => setTaxRatePercent(e.target.value)}
+                          placeholder="10.00"
+                          className="w-full mt-1 bg-[#ffffff] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono text-xs"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-center text-xs">
+                        <span className="text-[10px] text-[#747878] font-semibold uppercase">Formula</span>
+                        <span className="font-mono text-[11px] text-[#ba1a1a]">
+                          Tax = Gross Return &times; {taxRatePercent || '0'}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
@@ -745,6 +819,48 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                     className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono"
                   />
                 </div>
+
+                {/* Tax Configuration for FGN Bonds */}
+                <div className="col-span-1 sm:col-span-2 bg-[#f4f3f2]/70 border border-[#e3e2e1] rounded p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-semibold text-[#1a1c1c] uppercase tracking-wider">Withholding Tax (WHT)</span>
+                      <p className="text-[11px] text-[#747878]">Separate tax deduction rate per bond record (FGN Bonds are typically tax-exempt unless specified)</p>
+                    </div>
+                    <label className="text-xs font-semibold text-[#1a1c1c] cursor-pointer flex items-center gap-2 bg-[#ffffff] border border-[#e3e2e1] px-2.5 py-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={taxApplicable}
+                        onChange={(e) => setTaxApplicable(e.target.checked)}
+                        className="rounded border-[#c4c7c7] text-[#1b6b51] focus:ring-[#1b6b51]"
+                      />
+                      <span>Tax Applicable</span>
+                    </label>
+                  </div>
+                  {taxApplicable && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#e3e2e1]">
+                      <div>
+                        <label className="text-[11px] font-semibold text-[#747878] uppercase">Tax Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={taxRatePercent}
+                          onChange={(e) => setTaxRatePercent(e.target.value)}
+                          placeholder="10.00"
+                          className="w-full mt-1 bg-[#ffffff] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono text-xs"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-center text-xs">
+                        <span className="text-[10px] text-[#747878] font-semibold uppercase">Formula</span>
+                        <span className="font-mono text-[11px] text-[#ba1a1a]">
+                          Tax = Gross Quarterly Int &times; {taxRatePercent || '0'}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 
@@ -833,7 +949,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Rate % (p.a.)</label>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Investment Rate % (p.a.)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -853,15 +969,46 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                     className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono"
                   />
                 </div>
-                <div>
-                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Less Tax (₦)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={taxDeduction}
-                    onChange={(e) => setTaxDeduction(e.target.value)}
-                    className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono"
-                  />
+                {/* Tax Configuration for Locked Savings */}
+                <div className="col-span-1 sm:col-span-2 bg-[#f4f3f2]/70 border border-[#e3e2e1] rounded p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] font-semibold text-[#1a1c1c] uppercase tracking-wider">Withholding Tax (WHT)</span>
+                      <p className="text-[11px] text-[#747878]">Separate manually editable tax rate per locked savings record</p>
+                    </div>
+                    <label className="text-xs font-semibold text-[#1a1c1c] cursor-pointer flex items-center gap-2 bg-[#ffffff] border border-[#e3e2e1] px-2.5 py-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={taxApplicable}
+                        onChange={(e) => setTaxApplicable(e.target.checked)}
+                        className="rounded border-[#c4c7c7] text-[#1b6b51] focus:ring-[#1b6b51]"
+                      />
+                      <span>Tax Applicable</span>
+                    </label>
+                  </div>
+                  {taxApplicable && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#e3e2e1]">
+                      <div>
+                        <label className="text-[11px] font-semibold text-[#747878] uppercase">Tax Rate (%)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={taxRatePercent}
+                          onChange={(e) => setTaxRatePercent(e.target.value)}
+                          placeholder="10.00"
+                          className="w-full mt-1 bg-[#ffffff] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono text-xs"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-center text-xs">
+                        <span className="text-[10px] text-[#747878] font-semibold uppercase">Formula</span>
+                        <span className="font-mono text-[11px] text-[#ba1a1a]">
+                          Tax = Gross Interest &times; {taxRatePercent || '0'}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -886,16 +1033,42 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
               <span className="font-semibold text-[#1a1c1c]">Calculated Value Preview:</span>
             </div>
             <div className="font-mono font-bold text-xs text-[#1a1c1c]">
-              {category === 'fgn_bonds' && (
-                <span className="text-[#1b6b51]">
-                  +{formatNaira(calculateFgnBondQuarterlyInterest(parseFloat(amount) || 0, parseFloat(ratePercent) || 0))}/qtr
-                </span>
-              )}
-              {(category === 'commercial_papers' || category === 'treasury_bills') && (
-                <span>
-                  Total @ Maturity: {formatNaira(calculateCommercialPaperMaturity(parseFloat(amount) || 0, parseInt(tenorDays) || 90, parseFloat(ratePercent) || 0).totalAtMaturityNaira)}
-                </span>
-              )}
+              {category === 'fgn_bonds' && (() => {
+                const calc = calculateFgnBondQuarterlyInterest(
+                  parseFloat(amount) || 0,
+                  parseFloat(ratePercent) || 0,
+                  taxApplicable,
+                  parseFloat(taxRatePercent) || 0
+                );
+                return (
+                  <span className="text-[#1b6b51]">
+                    +{formatNaira(calc.quarterlyInterestNaira)}/qtr
+                    {taxApplicable && (
+                      <span className="text-[10px] text-[#747878] ml-1.5 font-normal">
+                        (Gross: {formatNaira(calc.grossQuarterlyInterest)} | Tax {taxRatePercent}%: -{formatNaira(calc.taxAmount)})
+                      </span>
+                    )}
+                  </span>
+                );
+              })()}
+              {(category === 'commercial_papers' || category === 'treasury_bills') && (() => {
+                const calc = calculateCommercialPaperMaturity(
+                  parseFloat(amount) || 0,
+                  parseInt(tenorDays) || 90,
+                  parseFloat(ratePercent) || 0,
+                  taxApplicable,
+                  parseFloat(taxRatePercent) || 0
+                );
+                return (
+                  <span>
+                    Total @ Maturity: {formatNaira(calc.totalAtMaturityNaira)}
+                    <span className="text-[10px] text-[#747878] ml-1.5 font-normal">
+                      (Gross: {formatNaira(calc.grossInterestEarnedNaira)}
+                      {taxApplicable ? ` | Tax ${taxRatePercent}%: -${formatNaira(calc.taxAmountNaira)} | Net: +${formatNaira(calc.netInterestEarnedNaira)}` : ` | Int: +${formatNaira(calc.netInterestEarnedNaira)}`})
+                    </span>
+                  </span>
+                );
+              })()}
               {category === 'mutual_funds' && (
                 <span>
                   Units: {calculateMutualFundUnits(parseFloat(amount) || 0, parseFloat(navAtPurchase) || 1).toFixed(4)}
@@ -906,11 +1079,25 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                   Total Cost: {formatNaira(calculateUbaDcaCost(parseFloat(dollarRate) || 1650, parseFloat(amount) || 0))}
                 </span>
               )}
-              {category === 'locked_savings' && (
-                <span className="text-[#1b6b51]">
-                  Net Interest: +{formatNaira(calculateLockedSavingsInterest(parseFloat(amount) || 0, parseFloat(ratePercent) || 0, parseInt(tenorDays) || 60, parseFloat(taxDeduction) || 0).netInterest)}
-                </span>
-              )}
+              {category === 'locked_savings' && (() => {
+                const calc = calculateLockedSavingsInterest(
+                  parseFloat(amount) || 0,
+                  parseFloat(ratePercent) || 0,
+                  parseInt(tenorDays) || 60,
+                  taxApplicable,
+                  parseFloat(taxRatePercent) || 0,
+                  parseFloat(taxDeduction) || 0
+                );
+                return (
+                  <span className="text-[#1b6b51]">
+                    Net Interest: +{formatNaira(calc.netInterest)}
+                    <span className="text-[10px] text-[#747878] ml-1.5 font-normal">
+                      (Gross: {formatNaira(calc.grossInterest)}
+                      {calc.taxAmount > 0 ? ` | Tax: -${formatNaira(calc.taxAmount)}` : ''} | Capital + Int: {formatNaira(calc.expectedInterestPlusCapitalNaira)})
+                    </span>
+                  </span>
+                );
+              })()}
               {category === 'foreign_stocks' && (
                 <span>
                   Total (₦): {formatNaira(calculateForeignStockBuy(parseFloat(unitPrice) || 0, parseFloat(qty) || 0, parseFloat(commission) || 0, parseFloat(dollarRate) || 1670).totalAmountNaira)}

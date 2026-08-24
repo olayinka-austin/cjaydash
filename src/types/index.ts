@@ -108,8 +108,13 @@ export interface CommercialPaperRecord extends BaseRecord {
   tenorDays: number;
   ratePercent: number; // Annual rate, e.g. 15.00
   maturityDate: string;
-  interestEarnedNaira: number; // (amountInvestedNaira * ratePercent / 100 * tenorDays / 365) or workbook calculation
-  totalAtMaturityNaira: number; // amountInvestedNaira + interestEarnedNaira
+  grossInterestEarnedNaira?: number; // (amountInvestedNaira * ratePercent / 100 * tenorDays / 365)
+  taxApplicable?: boolean; // Tax Applicable: Yes/No
+  taxRatePercent?: number; // Manually editable percentage per record
+  taxAmountNaira?: number; // Tax Amount = grossReturn * taxRate / 100
+  netInterestEarnedNaira?: number; // Net Return = grossReturn - taxAmount
+  interestEarnedNaira: number; // Net interest return
+  totalAtMaturityNaira: number; // amountInvestedNaira + net interest return
   platformUsed: string; // e.g., 'Afrinvest', 'FBN Quest', 'GTCO', 'FMDQ'
   issuer: string; // e.g., 'Dangote Sugar', 'Active'
   remark?: string;
@@ -123,10 +128,15 @@ export interface TreasuryBillRecord extends BaseRecord {
   investmentDate: string;
   amountInvestedNaira: number;
   tenorDays: number;
-  ratePercent: number;
+  ratePercent: number; // Investment Rate (%)
   maturityDate: string;
-  interestEarnedNaira: number;
-  totalAtMaturityNaira: number;
+  grossInterestEarnedNaira?: number; // (amountInvestedNaira * ratePercent / 100 * tenorDays / 365)
+  taxApplicable?: boolean; // Tax Applicable: Yes/No
+  taxRatePercent?: number; // Manually editable percentage per record
+  taxAmountNaira?: number; // Tax Amount = grossReturn * taxRate / 100
+  netInterestEarnedNaira?: number; // Net Return = grossReturn - taxAmount
+  interestEarnedNaira: number; // Net interest return
+  totalAtMaturityNaira: number; // amountInvestedNaira + net interest return
   platformUsed: string;
   status: 'Active' | 'Matured' | 'Rolled Over';
   remark?: string;
@@ -156,8 +166,13 @@ export interface FgnBondRecord extends BaseRecord {
   investmentYear: number; // default 2025
   amountInvestedNaira: number;
   tenorYears: number; // usually 2 or 3
-  interestRatePercent: number; // e.g., 18.00
-  quarterlyInterestNaira: number; // (amountInvestedNaira * interestRatePercent / 100) / 4
+  interestRatePercent: number; // Investment Rate (e.g., 18.00)
+  grossQuarterlyInterestNaira?: number; // (amountInvestedNaira * interestRatePercent / 100) / 4
+  taxApplicable?: boolean; // Tax Applicable: Yes/No
+  taxRatePercent?: number; // Manually editable percentage per record
+  taxAmountNaira?: number; // Quarterly Tax Amount
+  netQuarterlyInterestNaira?: number; // Net Quarterly Coupon
+  quarterlyInterestNaira: number; // Net quarterly coupon return
   paymentMonths: string[]; // e.g. ['MAY', 'AUGUST', 'NOVEMBER', 'FEBRUARY']
   remarks?: string;
   status: 'Active' | 'Matured';
@@ -201,11 +216,15 @@ export interface LockedSavingsRecord extends BaseRecord {
   appOrPlatform: string; // 'FAIRMONEY', 'PALMPAY', 'PIGGYVEST', 'COWRYWISE', etc.
   savingsPackage: string; // 'LOCKED SAVINGS', 'SAFE LOCK', etc.
   amountInvestedNaira: number;
-  interestRatePercentPerAnnum: number;
+  interestRatePercentPerAnnum: number; // Investment Rate (%)
   durationDays: number;
-  expectedInterestPlusCapitalNaira: number;
-  lessTaxNaira: number;
-  interestNaira: number; // ((amount * rate/100) / 365 * days) - lessTax
+  grossInterestNaira?: number; // Gross interest return before tax
+  taxApplicable?: boolean; // Tax Applicable: Yes/No
+  taxRatePercent?: number; // Manually editable percentage per record
+  taxAmountNaira?: number; // Tax Amount = grossReturn * taxRate / 100
+  expectedInterestPlusCapitalNaira: number; // amountInvestedNaira + Net Return
+  lessTaxNaira: number; // Preserved for compatibility
+  interestNaira: number; // Net interest return = Gross Return - Tax Amount
   remark?: string;
   status: 'Active' | 'Matured' | 'Liquidated';
 }

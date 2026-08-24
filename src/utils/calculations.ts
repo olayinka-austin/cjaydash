@@ -122,13 +122,49 @@ export const calculateNigerianStockBuy = (unitPriceNaira: number, qty: number, c
   return { amountNaira, totalAmountNaira, amountUsd };
 };
 
+// Core Tax & Net Return Calculation Engine
+export const calculateTaxAndNetReturn = (
+  grossReturn: number,
+  taxApplicable: boolean = false,
+  taxRatePercent: number = 0
+): { grossReturn: number; taxAmount: number; netReturn: number } => {
+  const gross = Number((grossReturn || 0).toFixed(2));
+  if (!taxApplicable) {
+    return {
+      grossReturn: gross,
+      taxAmount: 0,
+      netReturn: gross
+    };
+  }
+  const safeRate = isNaN(taxRatePercent) || taxRatePercent < 0 ? 0 : taxRatePercent;
+  const taxAmount = Number(((gross * safeRate) / 100).toFixed(2));
+  const netReturn = Number((gross - taxAmount).toFixed(2));
+  return {
+    grossReturn: gross,
+    taxAmount,
+    netReturn
+  };
+};
+
 // 4. Commercial Paper Interest & Total
-export const calculateCommercialPaperMaturity = (amountInvestedNaira: number, tenorDays: number, ratePercent: number) => {
-  // Annual rate converted to tenor: (P * R * T) / (365 * 100)
-  // In the workbook, interest earned is calculated based on rate convention
-  const interestEarnedNaira = Number(((amountInvestedNaira * (ratePercent / 100) * tenorDays) / 365).toFixed(2));
-  const totalAtMaturityNaira = Number((amountInvestedNaira + interestEarnedNaira).toFixed(2));
-  return { interestEarnedNaira, totalAtMaturityNaira };
+export const calculateCommercialPaperMaturity = (
+  amountInvestedNaira: number, 
+  tenorDays: number, 
+  ratePercent: number,
+  taxApplicable: boolean = false,
+  taxRatePercent: number = 0
+) => {
+  // Gross Return = (P * R * T) / (365 * 100)
+  const grossInterestEarnedNaira = Number(((amountInvestedNaira * (ratePercent / 100) * tenorDays) / 365).toFixed(2));
+  const { taxAmount, netReturn } = calculateTaxAndNetReturn(grossInterestEarnedNaira, taxApplicable, taxRatePercent);
+  const totalAtMaturityNaira = Number((amountInvestedNaira + netReturn).toFixed(2));
+  return { 
+    grossInterestEarnedNaira,
+    taxAmountNaira: taxAmount,
+    netInterestEarnedNaira: netReturn,
+    interestEarnedNaira: netReturn, // Net return after tax
+    totalAtMaturityNaira 
+  };
 };
 
 // 5. Mutual Funds Calculations
@@ -144,8 +180,20 @@ export const calculateMutualFundCurrentValue = (unitsPurchased: number, currentN
 };
 
 // 6. FGN Bond Quarterly Interest Calculation
-export const calculateFgnBondQuarterlyInterest = (amountInvestedNaira: number, interestRatePercent: number): number => {
-  return Number(((amountInvestedNaira * (interestRatePercent / 100)) / 4).toFixed(2));
+export const calculateFgnBondQuarterlyInterest = (
+  amountInvestedNaira: number, 
+  interestRatePercent: number,
+  taxApplicable: boolean = false,
+  taxRatePercent: number = 0
+) => {
+  const grossQuarterlyInterest = Number(((amountInvestedNaira * (interestRatePercent / 100)) / 4).toFixed(2));
+  const { taxAmount, netReturn } = calculateTaxAndNetReturn(grossQuarterlyInterest, taxApplicable, taxRatePercent);
+  return {
+    grossQuarterlyInterest,
+    taxAmount,
+    netQuarterlyInterest: netReturn,
+    quarterlyInterestNaira: netReturn // Net quarterly return after tax
+  };
 };
 
 // FGN Bond Dynamic Schedule Resolver
@@ -182,12 +230,29 @@ export const calculateLockedSavingsInterest = (
   amountInvestedNaira: number,
   interestRatePercentPerAnnum: number,
   durationDays: number,
-  lessTaxNaira: number = 0
+  taxApplicable: boolean = false,
+  taxRatePercent: number = 0,
+  manualTaxDeduction: number = 0
 ) => {
   const grossInterest = Number(((amountInvestedNaira * (interestRatePercentPerAnnum / 100) / 365) * durationDays).toFixed(2));
-  const netInterest = Number((grossInterest - lessTaxNaira).toFixed(2));
+  let taxAmount = 0;
+  if (taxApplicable) {
+    if (taxRatePercent > 0) {
+      taxAmount = Number(((grossInterest * taxRatePercent) / 100).toFixed(2));
+    } else if (manualTaxDeduction > 0) {
+      taxAmount = Number(manualTaxDeduction.toFixed(2));
+    }
+  }
+  const netInterest = Number((grossInterest - taxAmount).toFixed(2));
   const expectedInterestPlusCapitalNaira = Number((amountInvestedNaira + netInterest).toFixed(2));
-  return { grossInterest, netInterest, expectedInterestPlusCapitalNaira };
+  return { 
+    grossInterest, 
+    taxAmount,
+    lessTaxNaira: taxAmount, 
+    netInterest, 
+    interestNaira: netInterest,
+    expectedInterestPlusCapitalNaira 
+  };
 };
 
 // Category Metadata

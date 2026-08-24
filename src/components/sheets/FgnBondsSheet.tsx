@@ -1,44 +1,67 @@
 import React, { useState } from 'react';
 import { useWealth } from '../../context/WealthContext';
-import { formatNaira, formatPercent } from '../../utils/calculations';
-import { Trash2, Plus, Calendar, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatNaira, formatPercent, calculateFgnBondQuarterlyInterest } from '../../utils/calculations';
+import { Trash2, Plus, Calendar, Edit2, Check, X } from 'lucide-react';
+import { FgnBondRecord } from '../../types';
 
 interface SheetProps {
   onOpenAddModal: (category: 'fgn_bonds') => void;
 }
 
 export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
-  const { fgnBondRecords, deleteFgnBond } = useWealth();
+  const { fgnBondRecords, deleteFgnBond, updateFgnBond } = useWealth();
   const [activeYear, setActiveYear] = useState<number>(2025);
   const [viewMode, setViewMode] = useState<'CALENDAR' | 'PORTFOLIO'>('CALENDAR');
 
+  const [editingTaxId, setEditingTaxId] = useState<string | null>(null);
+  const [editIsTax, setEditIsTax] = useState<boolean>(false);
+  const [editTaxRate, setEditTaxRate] = useState<string>('10.00');
+
   const totalInvested = fgnBondRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
   const totalQuarterlyInterest = fgnBondRecords.reduce((acc, r) => acc + (r.quarterlyInterestNaira || 0), 0);
+  const totalTaxQuarterly = fgnBondRecords.reduce((acc, r) => acc + (r.taxAmountNaira || 0), 0);
   const totalAnnualPassiveIncome = totalQuarterlyInterest * 4;
+
+  const startEditTax = (r: FgnBondRecord) => {
+    setEditingTaxId(r.id);
+    setEditIsTax(!!r.taxApplicable);
+    setEditTaxRate((r.taxRatePercent ?? 10).toString());
+  };
+
+  const saveEditTax = (r: FgnBondRecord) => {
+    const rate = editIsTax ? (parseFloat(editTaxRate) || 0) : 0;
+    const calc = calculateFgnBondQuarterlyInterest(
+      r.amountInvestedNaira,
+      r.interestRatePercent,
+      editIsTax,
+      rate
+    );
+    updateFgnBond(r.id, {
+      taxApplicable: editIsTax,
+      taxRatePercent: rate,
+      grossQuarterlyInterestNaira: calc.grossQuarterlyInterest,
+      taxAmountNaira: calc.taxAmount,
+      netQuarterlyInterestNaira: calc.netQuarterlyInterest,
+      quarterlyInterestNaira: calc.quarterlyInterestNaira
+    });
+    setEditingTaxId(null);
+  };
 
   const calendarMonths = [
     'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
     'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
   ];
 
-  // Helper to determine if a bond pays in a given month of a given year
-  // In the workbook, 3-year bonds bought in 2025 pay 4 times a year for 3 years
   const getCouponForMonth = (record: any, month: string, year: number): number => {
     if (!record) return 0;
     const targetMonth = (month || '').toUpperCase();
     const isPaymentMonth = record.paymentMonths?.some((m: string) => (m || '').toUpperCase() === targetMonth);
     if (!isPaymentMonth) return 0;
 
-    // A 3-year bond issued in 2025 pays through 2028
     const startYear = record.investmentYear || 2025;
     const endYear = startYear + (record.tenorYears || 3);
-    
-    // First coupon month logic
-    const monthIndex = calendarMonths.indexOf(targetMonth);
-    const investMonthIndex = calendarMonths.indexOf((record.investmentMonth || 'FEBRUARY').toUpperCase());
 
     if (year === startYear) {
-      // In first year, pays in payment months occurring after or in first coupon schedule
       return isPaymentMonth ? record.quarterlyInterestNaira : 0;
     } else if (year > startYear && year <= endYear) {
       return record.quarterlyInterestNaira;
@@ -46,7 +69,6 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
     return 0;
   };
 
-  // Monthly totals for active year
   const monthlyTotals = calendarMonths.map(month => {
     return fgnBondRecords.reduce((acc, r) => acc + getCouponForMonth(r, month, activeYear), 0);
   });
@@ -64,9 +86,11 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
         </div>
 
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-5 rounded">
-          <div className="text-[11px] font-semibold text-[#1b6b51] uppercase tracking-wider">TOTAL QUARTERLY COUPON</div>
+          <div className="text-[11px] font-semibold text-[#1b6b51] uppercase tracking-wider">NET QUARTERLY COUPON</div>
           <div className="text-2xl font-bold font-mono text-[#1b6b51] mt-1">+{formatNaira(totalQuarterlyInterest)}</div>
-          <div className="text-xs text-[#747878] mt-1">Guaranteed quarterly tax-free cash flow</div>
+          <div className="text-xs text-[#747878] mt-1">
+            {totalTaxQuarterly > 0 ? `After -${formatNaira(totalTaxQuarterly)} tax deduction` : 'Quarterly cash flow'}
+          </div>
         </div>
 
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-5 rounded">
@@ -125,38 +149,37 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
 
           <button
             onClick={() => onOpenAddModal('fgn_bonds')}
-            className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3.5 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+            className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Bond Allotment</span>
+            <span>Add FGN Bond</span>
           </button>
         </div>
       </div>
 
-      {/* VIEW 1: MONTHLY PASSIVE INCOME CALCULATOR MATRIX */}
+      {/* VIEW 1: MONTHLY CALENDAR MATRIX */}
       {viewMode === 'CALENDAR' && (
         <div className="bg-[#ffffff] border border-[#e3e2e1] rounded overflow-hidden">
-          <div className="p-4 bg-[#f4f3f2] border-b border-[#e3e2e1] flex items-center justify-between">
+          <div className="p-4 bg-[#f4f3f2] border-b border-[#e3e2e1] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-[#1a1c1c]">
-                FGN SAVINGS BONDS MONTHLY PASSIVE INCOME CALCULATOR &middot; {activeYear}
+                FGN Bond Monthly Passive Income Schedule — {activeYear} Calendar
               </span>
-              <p className="text-[11px] text-[#747878]">Quarterly coupon payouts distributed by scheduled payment months</p>
+              <p className="text-[11px] text-[#747878]">Exact quarterly coupon cashflows paid into settlement accounts per broker allotment</p>
             </div>
-            <div className="text-right">
-              <span className="text-xs text-[#747878]">Total {activeYear} Cash Flow: </span>
-              <span className="text-sm font-bold font-mono text-[#1b6b51]">{formatNaira(totalYearlyIncome)}</span>
+            <div className="text-xs font-mono font-semibold text-[#1b6b51]">
+              Total {activeYear} Scheduled Coupons: {formatNaira(totalYearlyIncome)}
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-[11px]">
-              <thead className="bg-[#faf9f8] text-[#444748] border-b border-[#e3e2e1] font-semibold uppercase tracking-wider">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-[#faf9f8] text-[#444748] border-b border-[#e3e2e1] text-[11px] font-semibold uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-3 min-w-[140px] sticky left-0 bg-[#faf9f8] z-10">BROKER</th>
-                  <th className="py-3 px-2">INVEST MONTH</th>
-                  <th className="py-3 px-2 font-mono">AMOUNT (₦)</th>
-                  <th className="py-3 px-2">RATE</th>
+                  <th className="py-3 px-3 sticky left-0 bg-[#faf9f8] z-10">BROKER</th>
+                  <th className="py-3 px-2">ISSUANCE</th>
+                  <th className="py-3 px-2 font-mono">INVESTED (₦)</th>
+                  <th className="py-3 px-2 font-mono">RATE</th>
                   <th className="py-3 px-2 font-mono text-[#1b6b51]">QTR INT (₦)</th>
                   {calendarMonths.map((m) => (
                     <th key={m} className="py-3 px-2 text-center font-mono">
@@ -239,6 +262,7 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
                   <th className="py-3 px-3">AMOUNT INVESTED (₦)</th>
                   <th className="py-3 px-3">TENOR (YEARS)</th>
                   <th className="py-3 px-3">INTEREST RATE</th>
+                  <th className="py-3 px-3">TAX RATE / STATUS</th>
                   <th className="py-3 px-3 text-[#1b6b51]">QUARTERLY INTEREST (₦)</th>
                   <th className="py-3 px-3">PAYMENT MONTHS</th>
                   <th className="py-3 px-3">STATUS</th>
@@ -254,7 +278,75 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
                     <td className="py-3.5 px-3 font-mono font-semibold text-[#1a1c1c]">{formatNaira(r.amountInvestedNaira)}</td>
                     <td className="py-3.5 px-3 font-mono text-[#747878]">{r.tenorYears || 3} Years</td>
                     <td className="py-3.5 px-3 font-mono font-semibold text-[#1a1c1c]">{formatPercent(r.interestRatePercent)}</td>
-                    <td className="py-3.5 px-3 font-mono font-bold text-[#1b6b51]">+{formatNaira(r.quarterlyInterestNaira)}</td>
+
+                    {/* Tax Rate & Status with Quick Edit */}
+                    <td className="py-3.5 px-3">
+                      {editingTaxId === r.id ? (
+                        <div className="flex items-center gap-1.5 bg-[#ffffff] border border-[#1b6b51] p-1 rounded shadow-sm">
+                          <label className="text-[10px] font-medium flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editIsTax}
+                              onChange={(e) => setEditIsTax(e.target.checked)}
+                              className="rounded border-[#c4c7c7] text-[#1b6b51] w-3 h-3"
+                            />
+                            <span>Tax</span>
+                          </label>
+                          {editIsTax && (
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={editTaxRate}
+                              onChange={(e) => setEditTaxRate(e.target.value)}
+                              className="w-12 px-1 py-0.5 border border-[#e3e2e1] rounded font-mono text-[10px]"
+                              placeholder="%"
+                            />
+                          )}
+                          <button
+                            onClick={() => saveEditTax(r)}
+                            className="p-0.5 bg-[#1b6b51] text-[#ffffff] rounded hover:bg-[#14533d]"
+                            title="Save Tax Settings"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => setEditingTaxId(null)}
+                            className="p-0.5 bg-[#f4f3f2] text-[#444748] rounded hover:bg-[#e3e2e1]"
+                            title="Cancel"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          {r.taxApplicable ? (
+                            <span className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-[#ba1a1a]/10 text-[#ba1a1a] font-semibold border border-[#ba1a1a]/20">
+                              {formatPercent(r.taxRatePercent || 0)} WHT (-{formatNaira(r.taxAmountNaira || 0, false)})
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded font-mono text-[10px] bg-[#f4f3f2] text-[#747878] border border-[#e3e2e1]">
+                              Tax Exempt
+                            </span>
+                          )}
+                          <button
+                            onClick={() => startEditTax(r)}
+                            className="text-[#747878] hover:text-[#1a1c1c] p-0.5 rounded hover:bg-[#f4f3f2]"
+                            title="Edit Tax Rate for this bond"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="py-3.5 px-3 font-mono font-bold text-[#1b6b51]">
+                      +{formatNaira(r.quarterlyInterestNaira)}
+                      {r.taxApplicable && r.grossQuarterlyInterestNaira && (
+                        <span className="block text-[10px] text-[#747878] font-normal">
+                          Gross: {formatNaira(r.grossQuarterlyInterestNaira, false)}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3.5 px-3">
                       <div className="flex flex-wrap gap-1">
                         {r.paymentMonths?.map((m: string) => (
@@ -281,7 +373,7 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
                 <tr>
                   <td colSpan={3} className="py-3 px-3 font-bold">TOTAL FGN PORTFOLIO</td>
                   <td className="py-3 px-3 font-mono text-[#1a1c1c]">{formatNaira(totalInvested)}</td>
-                  <td colSpan={2} className="py-3 px-3"></td>
+                  <td colSpan={3} className="py-3 px-3"></td>
                   <td className="py-3 px-3 font-mono text-[#1b6b51]">+{formatNaira(totalQuarterlyInterest)}</td>
                   <td colSpan={3}></td>
                 </tr>

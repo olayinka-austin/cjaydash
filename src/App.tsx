@@ -21,6 +21,7 @@ import { ExcelImportScreen } from './components/ExcelImportScreen';
 import { MarketReferencesScreen } from './components/MarketReferencesScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { AddInvestmentModal } from './components/modals/AddInvestmentModal';
+import { AddPassiveIncomeModal } from './components/modals/AddPassiveIncomeModal';
 import { ImportWorkflow } from './components/modals/ImportWorkflow';
 import { SettingsModal } from './components/modals/SettingsModal';
 import { InvestmentCategory } from './types';
@@ -41,6 +42,7 @@ const DashboardContent: React.FC = () => {
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [isAddPassiveIncomeModalOpen, setIsAddPassiveIncomeModalOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
   const [modalCategory, setModalCategory] = useState<InvestmentCategory | 'all'>('all');
@@ -81,6 +83,7 @@ const DashboardContent: React.FC = () => {
       {/* Navigation Sidebar (Desktop + Mobile Drawer) */}
       <Sidebar 
         onOpenAddModal={() => handleOpenAddModal()} 
+        onOpenAddPassiveIncomeModal={() => setIsAddPassiveIncomeModalOpen(true)}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
@@ -118,6 +121,7 @@ const DashboardContent: React.FC = () => {
             {activeScreen === 'overview' && (
               <OverviewScreen
                 onOpenAddModal={() => handleOpenAddModal()}
+                onOpenAddPassiveIncomeModal={() => setIsAddPassiveIncomeModalOpen(true)}
                 onOpenImportModal={() => setIsImportModalOpen(true)}
               />
             )}
@@ -192,6 +196,11 @@ const DashboardContent: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         defaultCategory={modalCategory}
+      />
+
+      <AddPassiveIncomeModal
+        isOpen={isAddPassiveIncomeModalOpen}
+        onClose={() => setIsAddPassiveIncomeModalOpen(false)}
       />
 
       <ImportWorkflow

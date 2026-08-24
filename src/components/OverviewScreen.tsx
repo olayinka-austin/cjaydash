@@ -21,10 +21,15 @@ import {
 
 interface OverviewProps {
   onOpenAddModal: () => void;
+  onOpenAddPassiveIncomeModal: () => void;
   onOpenImportModal: () => void;
 }
 
-export const OverviewScreen: React.FC<OverviewProps> = ({ onOpenAddModal, onOpenImportModal }) => {
+export const OverviewScreen: React.FC<OverviewProps> = ({ 
+  onOpenAddModal, 
+  onOpenAddPassiveIncomeModal, 
+  onOpenImportModal 
+}) => {
   const { summary, settings, setSelectedCategory, setActiveScreen, seedInitialWorkbookToUserFirestore } = useWealth();
   const { user } = useAuth();
 
@@ -140,21 +145,30 @@ export const OverviewScreen: React.FC<OverviewProps> = ({ onOpenAddModal, onOpen
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0 self-start md:self-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 self-start md:self-auto">
             <button
               onClick={onOpenImportModal}
-              className="bg-[#faf9f8] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-3.5 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="bg-[#faf9f8] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-3.5 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>Excel Import</span>
             </button>
-            <button
-              onClick={onOpenAddModal}
-              className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Record Transaction</span>
-            </button>
+            <div className="flex flex-col gap-1.5">
+              <button
+                onClick={onOpenAddModal}
+                className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Investment</span>
+              </button>
+              <button
+                onClick={onOpenAddPassiveIncomeModal}
+                className="bg-[#faf9f8] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-3.5 py-1.5 rounded text-[11px] font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Plus className="w-3 h-3 text-[#1b6b51] dark:text-[#60d3a7]" />
+                <span>Add Passive Income Source</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -174,19 +188,26 @@ export const OverviewScreen: React.FC<OverviewProps> = ({ onOpenAddModal, onOpen
             </p>
           </div>
 
-          <div className="flex items-center justify-center gap-3 pt-4 flex-wrap">
+          <div className="flex flex-col items-center justify-center gap-2.5 pt-4 max-w-xs mx-auto">
             <button
               onClick={onOpenAddModal}
-              className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-5 py-2.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-sm transition-colors"
+              className="w-full bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-5 py-2.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
               <span>Add Investment</span>
             </button>
             <button
-              onClick={() => seedInitialWorkbookToUserFirestore()}
-              className="bg-[#faf9f8] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-4 py-2.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors"
+              onClick={onOpenAddPassiveIncomeModal}
+              className="w-full bg-[#faf9f8] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 text-[#1b6b51] dark:text-[#60d3a7]" />
+              <span>Add Passive Income Source</span>
+            </button>
+            <button
+              onClick={() => seedInitialWorkbookToUserFirestore()}
+              className="text-xs text-[#747878] hover:text-[#1a1c1c] dark:text-[#8c9290] dark:hover:text-[#e1e3e2] underline mt-1 flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" />
               <span>Import Master Workbook</span>
             </button>
           </div>
