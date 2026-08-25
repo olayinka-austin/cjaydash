@@ -23,6 +23,7 @@ import {
   X
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
+import logoImg from '../assets/logo.jpg';
 import { useAuth } from '../context/AuthContext';
 import { formatNaira, formatFinancialValue } from '../utils/calculations';
 
@@ -108,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center gap-2.5 overflow-hidden">
           <div className="w-10 h-10 rounded-lg overflow-hidden bg-white dark:bg-[#1f2322] border border-[#e3e2e1] dark:border-[#2d3130] shrink-0 flex items-center justify-center p-0.5 shadow-xs">
             <img 
-              src="/logo.jpg" 
+              src={logoImg} 
               alt="EL-CLASSY TRADER" 
               className="w-full h-full object-contain"
             />
