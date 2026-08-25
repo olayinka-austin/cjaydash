@@ -3,6 +3,7 @@ import { useWealth } from '../../context/WealthContext';
 import { formatNaira, formatUSD, formatDate, calculateForeignStockBuy, calculateForeignStockSell } from '../../utils/calculations';
 import { Trash2, Plus, BookOpen, AlertCircle, Edit2, X, Check } from 'lucide-react';
 import { ForeignStockBuyRecord, ForeignStockSellRecord } from '../../types';
+import { TradingNotesAndRulesSection } from '../TradingNotesAndRulesSection';
 
 interface SheetProps {
   onOpenAddModal: (category: 'foreign_stocks') => void;
@@ -606,26 +607,11 @@ export const ForeignStocksSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => 
 
       {/* Strategy & Rules Box from Workbook */}
       {activeTab === 'RULES' && (
-        <div className="bg-[#ffffff] border border-[#e3e2e1] rounded p-6 space-y-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#1a1c1c]">
-            <AlertCircle className="w-4 h-4 text-[#1b6b51]" />
-            <span>Official Foreign Stock Trading Rules & Lot Discipline</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-[#444748] leading-relaxed">
-            <div className="p-4 bg-[#faf9f8] border border-[#e3e2e1] rounded space-y-2">
-              <p className="font-semibold text-[#1a1c1c]">&bull; Trading Wallet Buffer:</p>
-              <p>Have at least $500 in USD Trading Wallet at all times in case of sudden buy opportunities.</p>
-              <p className="font-semibold text-[#1a1c1c] pt-2">&bull; Order Entry Modes:</p>
-              <p>For each trade, define the entry mode in the remarks section (e.g. Buy Limit, Market Order, Stop Limit).</p>
-            </div>
-            <div className="p-4 bg-[#faf9f8] border border-[#e3e2e1] rounded space-y-2">
-              <p className="font-semibold text-[#1a1c1c]">&bull; Strict LOT Trading Structure:</p>
-              <p>Buy or sell only in LOTs. If you buy 10 units of O, that is a LOT. If you buy 5 units later, that is a separate LOT. When selling, sell LOT of 10 or LOT of 5 to track precise profit/loss.</p>
-              <p className="font-semibold text-[#1a1c1c] pt-2">&bull; Profit Top-Up Rule:</p>
-              <p>Always withdraw profits to USD Wallet, leaving principal in trading wallet. 10% of profit should be topped up to the trading balance.</p>
-            </div>
-          </div>
-        </div>
+        <TradingNotesAndRulesSection
+          moduleId="foreign_stocks"
+          defaultTitle="Official Foreign Stock Trading Rules & Lot Discipline"
+          accentColor="#1b6b51"
+        />
       )}
     </div>
   );

@@ -12,6 +12,7 @@ import {
   Check, 
   Calculator
 } from 'lucide-react';
+import { TradingNotesAndRulesSection } from './TradingNotesAndRulesSection';
 
 const COMMON_EXCHANGES = [
   'Binance',
@@ -402,6 +403,14 @@ export const CryptoInvestmentsScreen: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Crypto Investment Strategy & Custody Rules */}
+      <TradingNotesAndRulesSection
+        moduleId="crypto_investments"
+        defaultTitle="Crypto Assets Portfolio Strategy & Custody Rules"
+        accentColor="#1b6b51"
+        badgeLabel="Strategic Holdings"
+      />
 
       {/* Add / Edit Crypto Investment Modal */}
       {isModalOpen && (

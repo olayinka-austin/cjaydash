@@ -8,7 +8,9 @@ import {
   LogOut,
   User,
   ShieldCheck,
-  Menu
+  Menu,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +30,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal, onToggleMobileSi
     selectedCategory, 
     settings,
     updateSettings,
+    hideAmounts,
+    toggleHideAmounts,
     syncStatus,
     seedInitialWorkbookToUserFirestore
   } = useWealth();
@@ -137,6 +141,33 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal, onToggleMobileSi
             $ USD
           </button>
         </div>
+
+        {/* Global Financial Privacy Toggle (Show / Hide Confidential Amounts) */}
+        <button
+          id="global-privacy-toggle-btn"
+          onClick={toggleHideAmounts}
+          title={hideAmounts ? "Amounts are hidden (Privacy Mode active). Click to show confidential figures." : "Amounts are visible. Click to hide confidential figures."}
+          className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-xs font-semibold transition-all cursor-pointer border ${
+            hideAmounts
+              ? 'bg-[#1b6b51]/15 dark:bg-[#1b6b51]/30 text-[#1b6b51] dark:text-[#60d3a7] border-[#1b6b51]/40 dark:border-[#60d3a7]/50 shadow-xs'
+              : 'text-[#444748] dark:text-[#c2c7c5] hover:text-[#1a1c1c] dark:hover:text-[#e1e3e2] hover:bg-[#eeeeed] dark:hover:bg-[#222625] border-[#e3e2e1] dark:border-[#2d3130]'
+          }`}
+          aria-label={hideAmounts ? "Show financial amounts" : "Hide financial amounts"}
+        >
+          {hideAmounts ? (
+            <>
+              <EyeOff className="w-3.5 h-3.5 text-[#1b6b51] dark:text-[#60d3a7] shrink-0" />
+              <span className="hidden sm:inline text-[11px] font-bold">Amounts Hidden</span>
+              <span className="sm:hidden text-[10px] font-bold">Hidden</span>
+            </>
+          ) : (
+            <>
+              <Eye className="w-3.5 h-3.5 text-[#747878] dark:text-[#8c9290] shrink-0" />
+              <span className="hidden sm:inline text-[11px] text-[#444748] dark:text-[#c2c7c5]">Hide Amounts</span>
+              <span className="sm:hidden text-[10px] text-[#444748] dark:text-[#c2c7c5]">Hide</span>
+            </>
+          )}
+        </button>
 
         {/* Quick Sync / Restore Master Data */}
         <button

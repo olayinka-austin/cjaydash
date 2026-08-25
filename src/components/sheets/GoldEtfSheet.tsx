@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWealth } from '../../context/WealthContext';
 import { formatNaira, formatUSD, formatDate } from '../../utils/calculations';
 import { Trash2, Plus, Coins, BookOpen, AlertCircle } from 'lucide-react';
+import { TradingNotesAndRulesSection } from '../TradingNotesAndRulesSection';
 
 interface SheetProps {
   onOpenAddModal: (category: 'gold_etfs') => void;
@@ -212,26 +213,11 @@ export const GoldEtfSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
 
       {/* RULES */}
       {activeTab === 'RULES' && (
-        <div className="bg-[#ffffff] border border-[#e3e2e1] rounded p-6 space-y-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#1a1c1c]">
-            <AlertCircle className="w-4 h-4 text-[#b45309]" />
-            <span>Physical Gold ETF Strategy & Allocation Guidelines</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-[#444748] leading-relaxed">
-            <div className="p-4 bg-[#faf9f8] border border-[#e3e2e1] rounded space-y-2">
-              <p className="font-semibold text-[#1a1c1c]">&bull; Supported Tickers:</p>
-              <p>SPDR Gold Shares (GLD), iShares Gold Trust (IAU), abrdn Physical Gold Shares ETF (SGOL).</p>
-              <p className="font-semibold text-[#1a1c1c] pt-2">&bull; Spot Price Reference:</p>
-              <p>Spot price per ounce recorded at the time of each trade to gauge premium/discount to spot.</p>
-            </div>
-            <div className="p-4 bg-[#faf9f8] border border-[#e3e2e1] rounded space-y-2">
-              <p className="font-semibold text-[#1a1c1c]">&bull; Buyback Discipline:</p>
-              <p>After selling, attempt to buy back the same quantity sold when the opportunity presents itself again.</p>
-              <p className="font-semibold text-[#1a1c1c] pt-2">&bull; USD Trading Wallet Buffer:</p>
-              <p>Maintain at least $500 in the USD Trading Wallet for gold market dip opportunities.</p>
-            </div>
-          </div>
-        </div>
+        <TradingNotesAndRulesSection
+          moduleId="gold_etfs"
+          defaultTitle="Physical Gold ETF Strategy & Allocation Guidelines"
+          accentColor="#b45309"
+        />
       )}
     </div>
   );

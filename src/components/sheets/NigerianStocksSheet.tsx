@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWealth } from '../../context/WealthContext';
 import { formatNaira, formatUSD, formatDate } from '../../utils/calculations';
 import { Trash2, Plus, BookOpen, AlertCircle } from 'lucide-react';
+import { TradingNotesAndRulesSection } from '../TradingNotesAndRulesSection';
 
 interface SheetProps {
   onOpenAddModal: (category: 'nigerian_stocks') => void;
@@ -194,24 +195,11 @@ export const NigerianStocksSheet: React.FC<SheetProps> = ({ onOpenAddModal }) =>
 
       {/* Rules */}
       {activeTab === 'RULES' && (
-        <div className="bg-[#ffffff] border border-[#e3e2e1] rounded p-6 space-y-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#1a1c1c]">
-            <AlertCircle className="w-4 h-4 text-[#1b6b51]" />
-            <span>NGX Portfolio Management & Cash Reserve Rules</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-[#444748] leading-relaxed">
-            <div className="p-4 bg-[#faf9f8] border border-[#e3e2e1] rounded space-y-2">
-              <p className="font-semibold text-[#1a1c1c]">&bull; Trading Account Wallet Buffer:</p>
-              <p>Have at least ₦500,000 in Trading Account Wallet at all times in case of urgent buy opportunities.</p>
-              <p className="font-semibold text-[#1a1c1c] pt-2">&bull; LOT-by-LOT Recording:</p>
-              <p>Every trade is recorded separately in different rows. If you buy 100 units of UBA and later 50 units, treat them as distinct LOTs for accurate profit calculation upon sale.</p>
-            </div>
-            <div className="p-4 bg-[#faf9f8] border border-[#e3e2e1] rounded space-y-2">
-              <p className="font-semibold text-[#1a1c1c]">&bull; Profit Extraction & Reinvestment:</p>
-              <p>After selling, always withdraw profits after sale, leaving the rest of the capital in TRADING ACCOUNT WALLET. 10% of profit should be topped up to the trading balance when taking any profit.</p>
-            </div>
-          </div>
-        </div>
+        <TradingNotesAndRulesSection
+          moduleId="nigerian_stocks"
+          defaultTitle="NGX Portfolio Management & Cash Reserve Rules"
+          accentColor="#1b6b51"
+        />
       )}
     </div>
   );

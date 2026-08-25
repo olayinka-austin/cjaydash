@@ -11,6 +11,111 @@
   :root {
     --font-poppins: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color-scheme: light;
+
+    /* Default Blue Theme (Institutional Azure) */
+    --color-accent-primary: #0284c7;
+    --color-accent-hover: #0369a1;
+    --color-accent-light: #f0f9ff;
+    --color-accent-border-light: rgba(2, 132, 199, 0.25);
+    --color-accent-dark: #38bdf8;
+    --color-accent-dark-hover: #0ea5e9;
+    --color-accent-dark-bg: rgba(2, 132, 199, 0.2);
+    --color-accent-dark-border: rgba(56, 189, 248, 0.3);
+    --color-accent-chart: #0284c7;
+    --color-accent-chart-sub: #38bdf8;
+    --color-accent-ring: #38bdf8;
+    --color-accent-swatch: #0284c7;
+  }
+
+  /* Specific theme data attributes */
+  :root[data-color-theme="blue"] {
+    --color-accent-primary: #0284c7;
+    --color-accent-hover: #0369a1;
+    --color-accent-light: #f0f9ff;
+    --color-accent-border-light: rgba(2, 132, 199, 0.25);
+    --color-accent-dark: #38bdf8;
+    --color-accent-dark-hover: #0ea5e9;
+    --color-accent-dark-bg: rgba(2, 132, 199, 0.2);
+    --color-accent-dark-border: rgba(56, 189, 248, 0.3);
+    --color-accent-chart: #0284c7;
+    --color-accent-chart-sub: #38bdf8;
+    --color-accent-ring: #38bdf8;
+    --color-accent-swatch: #0284c7;
+  }
+
+  :root[data-color-theme="emerald"] {
+    --color-accent-primary: #1b6b51;
+    --color-accent-hover: #15533e;
+    --color-accent-light: #e8f5f0;
+    --color-accent-border-light: rgba(27, 107, 81, 0.25);
+    --color-accent-dark: #60d3a7;
+    --color-accent-dark-hover: #34d399;
+    --color-accent-dark-bg: rgba(27, 107, 81, 0.2);
+    --color-accent-dark-border: rgba(96, 211, 167, 0.3);
+    --color-accent-chart: #1b6b51;
+    --color-accent-chart-sub: #60d3a7;
+    --color-accent-ring: #60d3a7;
+    --color-accent-swatch: #1b6b51;
+  }
+
+  :root[data-color-theme="purple"] {
+    --color-accent-primary: #7c3aed;
+    --color-accent-hover: #6d28d9;
+    --color-accent-light: #f5f3ff;
+    --color-accent-border-light: rgba(124, 58, 237, 0.25);
+    --color-accent-dark: #a78bfa;
+    --color-accent-dark-hover: #8b5cf6;
+    --color-accent-dark-bg: rgba(124, 58, 237, 0.2);
+    --color-accent-dark-border: rgba(167, 139, 250, 0.3);
+    --color-accent-chart: #7c3aed;
+    --color-accent-chart-sub: #a78bfa;
+    --color-accent-ring: #a78bfa;
+    --color-accent-swatch: #7c3aed;
+  }
+
+  :root[data-color-theme="amber"] {
+    --color-accent-primary: #b45309;
+    --color-accent-hover: #92400e;
+    --color-accent-light: #fffbeb;
+    --color-accent-border-light: rgba(180, 83, 9, 0.25);
+    --color-accent-dark: #fbbf24;
+    --color-accent-dark-hover: #f59e0b;
+    --color-accent-dark-bg: rgba(180, 83, 9, 0.22);
+    --color-accent-dark-border: rgba(251, 191, 36, 0.3);
+    --color-accent-chart: #b45309;
+    --color-accent-chart-sub: #fbbf24;
+    --color-accent-ring: #fbbf24;
+    --color-accent-swatch: #b45309;
+  }
+
+  :root[data-color-theme="rose"] {
+    --color-accent-primary: #be123c;
+    --color-accent-hover: #9f1239;
+    --color-accent-light: #fff1f2;
+    --color-accent-border-light: rgba(190, 18, 60, 0.25);
+    --color-accent-dark: #fb7185;
+    --color-accent-dark-hover: #f43f5e;
+    --color-accent-dark-bg: rgba(190, 18, 60, 0.2);
+    --color-accent-dark-border: rgba(251, 113, 133, 0.3);
+    --color-accent-chart: #be123c;
+    --color-accent-chart-sub: #fb7185;
+    --color-accent-ring: #fb7185;
+    --color-accent-swatch: #be123c;
+  }
+
+  :root[data-color-theme="slate"] {
+    --color-accent-primary: #334155;
+    --color-accent-hover: #1e293b;
+    --color-accent-light: #f1f5f9;
+    --color-accent-border-light: rgba(51, 65, 85, 0.25);
+    --color-accent-dark: #94a3b8;
+    --color-accent-dark-hover: #cbd5e1;
+    --color-accent-dark-bg: rgba(51, 65, 85, 0.25);
+    --color-accent-dark-border: rgba(148, 163, 184, 0.3);
+    --color-accent-chart: #475569;
+    --color-accent-chart-sub: #94a3b8;
+    --color-accent-ring: #94a3b8;
+    --color-accent-swatch: #475569;
   }
 
   :root.dark {
@@ -43,6 +148,56 @@
   input, button, select, textarea, text, tspan {
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
+}
+
+/* Color Theme Utility Helpers */
+.text-accent {
+  color: var(--color-accent-primary);
+}
+.dark .text-accent {
+  color: var(--color-accent-dark);
+}
+
+.bg-accent {
+  background-color: var(--color-accent-primary);
+  color: #ffffff;
+}
+.bg-accent:hover {
+  background-color: var(--color-accent-hover);
+}
+.dark .bg-accent {
+  background-color: var(--color-accent-dark);
+  color: #111313;
+}
+.dark .bg-accent:hover {
+  background-color: var(--color-accent-dark-hover);
+}
+
+.bg-accent-subtle {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent-primary);
+}
+.dark .bg-accent-subtle {
+  background-color: var(--color-accent-dark-bg);
+  color: var(--color-accent-dark);
+}
+
+.border-accent {
+  border-color: var(--color-accent-primary);
+}
+.dark .border-accent {
+  border-color: var(--color-accent-dark);
+}
+
+.border-accent-subtle {
+  border-color: var(--color-accent-border-light);
+}
+.dark .border-accent-subtle {
+  border-color: var(--color-accent-dark-border);
+}
+
+.ring-accent {
+  --tw-ring-color: var(--color-accent-ring);
 }
 
 .font-mono {

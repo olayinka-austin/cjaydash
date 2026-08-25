@@ -23,6 +23,7 @@ import {
   Check,
   X
 } from 'lucide-react';
+import { TradingNotesAndRulesSection } from './TradingNotesAndRulesSection';
 
 const PRESET_EXCHANGES = ['Binance', 'Luno', 'Remitano', 'Bybit', 'KuCoin', 'Coinbase', 'OKX', 'Kraken'];
 
@@ -458,6 +459,14 @@ export const CryptoDayTradingScreen: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Crypto Day Trading Rules & Execution Guidelines */}
+      <TradingNotesAndRulesSection
+        moduleId="crypto_day_trades"
+        defaultTitle="Crypto Day Trading Execution & Risk Management Rules"
+        accentColor="#1b6b51"
+        badgeLabel="Active Day Trading"
+      />
 
       {/* Add / Edit Trade Modal — Matches Exact New Investment Record Design */}
       {isModalOpen && (

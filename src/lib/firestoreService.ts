@@ -29,7 +29,8 @@ import {
   CryptoDayTradeRecord,
   AppDocument,
   AppSettings,
-  MarketReferenceRecord
+  MarketReferenceRecord,
+  ModuleTradingRules
 } from '../types';
 
 export enum OperationType {
@@ -154,6 +155,7 @@ export const bulkImportToFirestore = async (uid: string, payload: {
   cryptoDayTrades?: CryptoDayTradeRecord[];
   documents?: AppDocument[];
   marketReferences?: MarketReferenceRecord[];
+  tradingRules?: ModuleTradingRules[];
   settings?: AppSettings;
 }) => {
   if (!uid) throw new Error('Cannot perform bulk import: Authenticated UID is required.');
@@ -177,6 +179,7 @@ export const bulkImportToFirestore = async (uid: string, payload: {
     { name: 'crypto_day_trades', items: payload.cryptoDayTrades || [] },
     { name: 'documents', items: payload.documents || [] },
     { name: 'market_references', items: payload.marketReferences || [] },
+    { name: 'trading_rules', items: payload.tradingRules || [] },
   ];
 
   try {

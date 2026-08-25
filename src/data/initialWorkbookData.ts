@@ -23,7 +23,9 @@ export const initialAppSettings: AppSettings = {
   currencyDisplay: 'ALL',
   notificationsEnabled: true,
   maturityReminderDays: 30,
-  lastBackupDate: '2026-08-22'
+  lastBackupDate: '2026-08-22',
+  hideAmounts: false,
+  colorTheme: 'blue'
 };
 
 // 1. UBA Domiciliary DCA

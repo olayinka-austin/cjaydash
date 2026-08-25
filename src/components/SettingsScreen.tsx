@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWealth } from '../context/WealthContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -20,15 +20,17 @@ import {
   Laptop,
   User,
   ShieldCheck,
-  Palette
+  Palette,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { formatNaira, formatUSD, formatFinancialValue, convertNairaToUsd, convertUsdToNaira } from '../utils/calculations';
-import { AppSettings } from '../types';
+import { AppSettings, ColorTheme } from '../types';
 
 export const SettingsScreen: React.FC = () => {
-  const { settings, updateSettings, resetToWorkbookDefaults, summary } = useWealth();
+  const { settings, updateSettings, resetToWorkbookDefaults, summary, hideAmounts, toggleHideAmounts } = useWealth();
   const { user, updateDisplayName } = useAuth();
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme, colorTheme, setColorTheme, availableColorThemes, currentColorTheme } = useTheme();
 
   const [displayNameInput, setDisplayNameInput] = useState<string>(user?.displayName || settings?.preferredDisplayName || 'CJ');
   const [usdRate, setUsdRate] = useState<string>((settings?.currentUsdExchangeRate ?? 1780).toString());
@@ -41,7 +43,13 @@ export const SettingsScreen: React.FC = () => {
         : 'ALL'
   );
   const [notifications, setNotifications] = useState<boolean>(settings?.notificationsEnabled ?? true);
+  const [privacyHidden, setPrivacyHidden] = useState<boolean>(settings?.hideAmounts ?? hideAmounts ?? false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+
+  // Sync state when settings changes
+  useEffect(() => {
+    setPrivacyHidden(settings?.hideAmounts ?? false);
+  }, [settings?.hideAmounts]);
 
   // Live parsed values for instant recalculations
   const parsedUsdRate = parseFloat(usdRate) > 0 ? parseFloat(usdRate) : (settings?.currentUsdExchangeRate || 1780);
@@ -78,6 +86,13 @@ export const SettingsScreen: React.FC = () => {
     });
   };
 
+  const handleColorThemeChange = (newColorTheme: ColorTheme) => {
+    setColorTheme(newColorTheme);
+    updateSettings({
+      colorTheme: newColorTheme
+    });
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalUsd = parseFloat(usdRate);
@@ -92,8 +107,10 @@ export const SettingsScreen: React.FC = () => {
       currentGoldSpotPriceUsd: !isNaN(finalGold) && finalGold > 0 ? finalGold : 3369.67,
       currencyDisplay: selectedCurrency,
       notificationsEnabled: notifications,
+      hideAmounts: privacyHidden,
       preferredDisplayName: displayNameInput.trim() || 'CJ',
       theme: theme,
+      colorTheme: colorTheme,
       lastBackupDate: new Date().toISOString().split('T')[0],
       lastRateUpdate: new Date().toISOString()
     });
@@ -275,7 +292,82 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. User Profile & Account Settings */}
+      {/* 2. Color Theme & Accent Palette Picker */}
+      <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-6 rounded space-y-4 shadow-2xs transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f4f3f2] dark:border-[#2d3130]">
+          <div>
+            <div className="flex items-center gap-2">
+              <Palette className="w-4 h-4 text-accent" />
+              <h2 className="text-sm font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2] uppercase">Accent Color Theme</h2>
+            </div>
+            <p className="text-xs text-[#747878] dark:text-[#8c9290] mt-0.5">
+              Select a professional accent color scheme for primary buttons, active navigation, tabs, focus rings, and chart highlights.
+            </p>
+          </div>
+          <span className="text-[11px] font-mono font-medium text-[#747878] dark:text-[#8c9290] bg-[#faf9f8] dark:bg-[#222625] px-2.5 py-1 rounded border border-[#e3e2e1] dark:border-[#2d3130] self-start sm:self-auto flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: currentColorTheme.swatchHex }}></span>
+            <span>Theme: <strong className="text-[#1a1c1c] dark:text-[#e1e3e2]">{currentColorTheme.name}</strong></span>
+          </span>
+        </div>
+
+        {/* Compact Selectable Color Options Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
+          {availableColorThemes.map((ct) => {
+            const isSelected = colorTheme === ct.id;
+            return (
+              <button
+                key={ct.id}
+                type="button"
+                onClick={() => handleColorThemeChange(ct.id)}
+                className={`p-3 rounded-md border text-left transition-all cursor-pointer relative flex flex-col justify-between min-h-[96px] ${
+                  isSelected
+                    ? 'border-2 shadow-xs bg-[#ffffff] dark:bg-[#222625] ring-2 ring-offset-1 ring-offset-white dark:ring-offset-[#191c1b]'
+                    : 'bg-[#faf9f8] hover:bg-[#f4f3f2] border-[#e3e2e1] dark:bg-[#191c1b] dark:border-[#2d3130] dark:hover:bg-[#222625]'
+                }`}
+                style={{
+                  borderColor: isSelected ? ct.swatchHex : undefined,
+                  ['--tw-ring-color' as any]: isSelected ? ct.swatchHex : undefined
+                }}
+              >
+                <div className="flex items-center justify-between w-full">
+                  {/* Circular Color Swatch with Check Icon on Active */}
+                  <span
+                    className="w-6 h-6 rounded-full flex items-center justify-center shadow-xs shrink-0 transition-transform"
+                    style={{ backgroundColor: ct.swatchHex }}
+                  >
+                    {isSelected && (
+                      <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                    )}
+                  </span>
+
+                  {isSelected && (
+                    <span 
+                      className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded font-mono"
+                      style={{ 
+                        backgroundColor: ct.lightBg, 
+                        color: ct.lightPrimary 
+                      }}
+                    >
+                      Active
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-2.5">
+                  <div className="text-xs font-bold text-[#1a1c1c] dark:text-[#e1e3e2] flex items-center gap-1">
+                    <span>{ct.name}</span>
+                  </div>
+                  <div className="text-[10px] text-[#747878] dark:text-[#8c9290] truncate leading-tight mt-0.5">
+                    {ct.description}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. User Profile & Account Settings */}
       <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-6 rounded space-y-4 shadow-2xs transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f4f3f2] dark:border-[#222625]">
           <div>
@@ -541,6 +633,26 @@ export const SettingsScreen: React.FC = () => {
               <label htmlFor="autorefresh_screen" className="text-xs text-[#1a1c1c] dark:text-[#e1e3e2] font-medium cursor-pointer">
                 Enable maturity reminders and coupon payout notices
               </label>
+            </div>
+
+            {/* Financial Privacy Mode Option */}
+            <div className="flex items-start gap-2.5 pt-2 border-t border-[#f4f3f2] dark:border-[#222625]">
+              <input
+                type="checkbox"
+                id="privacy_hide_amounts"
+                checked={privacyHidden}
+                onChange={(e) => setPrivacyHidden(e.target.checked)}
+                className="mt-0.5 rounded border-[#e3e2e1] dark:border-[#2d3130] text-[#1b6b51] dark:text-[#60d3a7] focus:ring-0 cursor-pointer"
+              />
+              <div>
+                <label htmlFor="privacy_hide_amounts" className="text-xs text-[#1a1c1c] dark:text-[#e1e3e2] font-medium cursor-pointer flex items-center gap-1.5">
+                  {privacyHidden ? <EyeOff className="w-3.5 h-3.5 text-[#1b6b51] dark:text-[#60d3a7]" /> : <Eye className="w-3.5 h-3.5 text-[#747878] dark:text-[#8c9290]" />}
+                  <span>Hide Confidential Monetary Amounts (Financial Privacy Mode)</span>
+                </label>
+                <p className="text-[11px] text-[#747878] dark:text-[#8c9290] mt-0.5">
+                  Masks financial figures (e.g. ₦•••••• / $••••••) on screen during presentations or when sharing your screen.
+                </p>
+              </div>
             </div>
 
             {/* Submit Action */}

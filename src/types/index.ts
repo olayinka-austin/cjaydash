@@ -314,6 +314,8 @@ export interface MarketReferenceRecord extends BaseRecord {
   relatedRecordId?: string;
 }
 
+export type ColorTheme = 'blue' | 'emerald' | 'purple' | 'amber' | 'rose' | 'slate';
+
 // System Settings
 export interface AppSettings {
   currentUsdExchangeRate: number; // e.g. 1780.00
@@ -325,7 +327,9 @@ export interface AppSettings {
   autoRefreshRates?: boolean;
   lastRateUpdate?: string;
   theme?: 'light' | 'dark' | 'system';
+  colorTheme?: ColorTheme; // Predefined Accent Color Theme (blue, emerald, purple, amber, rose, slate)
   preferredDisplayName?: string;
+  hideAmounts?: boolean; // Global Financial Privacy Toggle (Show/Hide sensitive financial figures)
 }
 
 // Portfolio Aggregates

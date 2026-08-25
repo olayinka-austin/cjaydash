@@ -52,7 +52,7 @@ import {
   initialMarketReferences
 } from '../data/initialWorkbookData';
 import { INITIAL_MODULE_TRADING_RULES } from '../data/initialTradingRules';
-import { CATEGORY_DETAILS } from '../utils/calculations';
+import { CATEGORY_DETAILS, setGlobalHideAmounts } from '../utils/calculations';
 
 interface WealthContextType {
   // Navigation & UI State
@@ -67,6 +67,11 @@ interface WealthContextType {
   isDataLoading: boolean;
   syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
   syncError: string | null;
+
+  // Global Financial Privacy Mode
+  hideAmounts: boolean;
+  toggleHideAmounts: () => Promise<void>;
+  setHideAmounts: (hide: boolean) => Promise<void>;
 
   // Data Collections (Live Firestore)
   ubaDcaRecords: UbaDcaRecord[];
@@ -186,7 +191,28 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [syncError, setSyncError] = useState<string | null>(null);
 
   // Firestore-synced state arrays
-  const [settings, setSettings] = useState<AppSettings>(initialAppSettings);
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const localPrivacy = typeof window !== 'undefined' 
+      ? localStorage.getItem('financial_privacy_hide_amounts') === 'true' 
+      : false;
+    const localColorTheme = typeof window !== 'undefined'
+      ? (localStorage.getItem('wealth_terminal_color_theme_preference_v1') as any)
+      : null;
+    return {
+      ...initialAppSettings,
+      hideAmounts: localPrivacy,
+      colorTheme: (localColorTheme === 'blue' || localColorTheme === 'emerald' || localColorTheme === 'purple' || localColorTheme === 'amber' || localColorTheme === 'rose' || localColorTheme === 'slate') 
+        ? localColorTheme 
+        : (initialAppSettings.colorTheme || 'blue')
+    };
+  });
+
+  // Keep global calculation formatter synchronized with settings.hideAmounts
+  useEffect(() => {
+    if (typeof settings?.hideAmounts === 'boolean') {
+      setGlobalHideAmounts(settings.hideAmounts);
+    }
+  }, [settings?.hideAmounts]);
   const [ubaDcaRecords, setUbaDcaRecords] = useState<UbaDcaRecord[]>([]);
   const [foreignStockBuys, setForeignStockBuys] = useState<ForeignStockBuyRecord[]>([]);
   const [foreignStockSells, setForeignStockSells] = useState<ForeignStockSellRecord[]>([]);
@@ -205,6 +231,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [passiveIncomeMatrixRecords, setPassiveIncomeMatrixRecords] = useState<PassiveIncomeMatrixRecord[]>([]);
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [marketReferences, setMarketReferences] = useState<MarketReferenceRecord[]>([]);
+  const [tradingRulesList, setTradingRulesList] = useState<ModuleTradingRules[]>([]);
 
   // Seed master data helper
   const seedInitialWorkbookToUserFirestore = async () => {
@@ -227,6 +254,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         lockedSavingsRecords: initialLockedSavingsRecords,
         documents: initialDocuments,
         marketReferences: initialMarketReferences,
+        tradingRules: Object.values(INITIAL_MODULE_TRADING_RULES),
         settings: initialAppSettings
       });
       setSyncStatus('synced');
@@ -259,6 +287,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setPassiveIncomeMatrixRecords([]);
       setDocuments([]);
       setMarketReferences([]);
+      setTradingRulesList([]);
       return;
     }
 
@@ -313,6 +342,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const unsubPassiveMatrix = createListener<PassiveIncomeMatrixRecord>('passive_income_matrix', setPassiveIncomeMatrixRecords);
     const unsubDocs = createListener<AppDocument>('documents', setDocuments);
     const unsubMarketRef = createListener<MarketReferenceRecord>('market_references', setMarketReferences);
+    const unsubTradingRules = createListener<ModuleTradingRules>('trading_rules', setTradingRulesList);
 
     // Stop loading after initialization
     const timer = setTimeout(() => {
@@ -341,6 +371,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       unsubPassiveMatrix();
       unsubDocs();
       unsubMarketRef();
+      unsubTradingRules();
     };
   }, [user]);
 
@@ -858,10 +889,32 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
-    if (!user) return;
+    if (!user) {
+      const merged = { ...settings, ...newSettings };
+      setSettings(merged);
+      if (typeof newSettings.hideAmounts === 'boolean') {
+        setGlobalHideAmounts(newSettings.hideAmounts);
+      }
+      return;
+    }
     const merged = { ...settings, ...newSettings };
     setSettings(merged);
+    if (typeof newSettings.hideAmounts === 'boolean') {
+      setGlobalHideAmounts(newSettings.hideAmounts);
+    }
     await saveUserSettings(user.uid, merged);
+  };
+
+  const toggleHideAmounts = async () => {
+    const current = settings?.hideAmounts ?? false;
+    const next = !current;
+    setGlobalHideAmounts(next);
+    await updateSettings({ hideAmounts: next });
+  };
+
+  const setHideAmounts = async (hide: boolean) => {
+    setGlobalHideAmounts(hide);
+    await updateSettings({ hideAmounts: hide });
   };
 
   const resetToMasterWorkbook = () => {
@@ -925,6 +978,52 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     await deleteUserRecord(user.uid, 'passive_income_matrix', id);
   };
 
+  // 14. TRADING NOTES & RULES LOGIC
+  const getModuleTradingRules = (moduleId: string): ModuleTradingRules | undefined => {
+    const custom = tradingRulesList.find(r => r.moduleId === moduleId || r.id === moduleId);
+    if (custom && custom.rules) {
+      return custom;
+    }
+    return INITIAL_MODULE_TRADING_RULES[moduleId];
+  };
+
+  const saveModuleTradingRules = async (moduleId: string, title: string, rules: TradingRuleItem[]) => {
+    const existing = getModuleTradingRules(moduleId);
+    const updatedDoc: ModuleTradingRules = {
+      id: moduleId,
+      moduleId,
+      title: title.trim() || existing?.title || 'Trading Notes & Rules',
+      rules: rules.map((r, idx) => ({
+        ...r,
+        order: idx + 1
+      })),
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Optimistic local state update
+    setTradingRulesList(prev => {
+      const idx = prev.findIndex(r => r.moduleId === moduleId || r.id === moduleId);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updatedDoc;
+        return copy;
+      }
+      return [...prev, updatedDoc];
+    });
+
+    if (user) {
+      await saveUserRecord(user.uid, 'trading_rules', moduleId, updatedDoc);
+    }
+  };
+
+  const resetModuleTradingRules = async (moduleId: string) => {
+    const defaultData = INITIAL_MODULE_TRADING_RULES[moduleId];
+    if (defaultData) {
+      await saveModuleTradingRules(moduleId, defaultData.title, defaultData.rules);
+    }
+  };
+
   return (
     <WealthContext.Provider
       value={{
@@ -956,8 +1055,15 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         documents,
         documentRecords: documents,
         marketReferences,
+        tradingRulesList,
+        getModuleTradingRules,
+        saveModuleTradingRules,
+        resetModuleTradingRules,
         settings,
         summary,
+        hideAmounts: settings?.hideAmounts ?? false,
+        toggleHideAmounts,
+        setHideAmounts,
         addUbaDca,
         deleteUbaDca,
         addForeignStockBuy,
