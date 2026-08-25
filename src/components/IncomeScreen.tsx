@@ -102,7 +102,7 @@ export const IncomeScreen: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-3.5 py-2 bg-[#1b6b51] hover:bg-[#15543f] text-white text-xs font-semibold rounded transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+            className="px-3.5 py-2 bg-accent hover:opacity-95 text-white dark:text-[#111313] text-xs font-semibold rounded transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Income Source</span>
@@ -220,11 +220,11 @@ export const IncomeScreen: React.FC = () => {
                                   if (e.key === 'Enter') handleCellSave(source, m.key);
                                   if (e.key === 'Escape') setEditingCell(null);
                                 }}
-                                className="w-24 px-2 py-1 text-xs font-mono bg-white dark:bg-[#222625] border border-[#1b6b51] rounded text-right text-[#1a1c1c] dark:text-[#e1e3e2] focus:outline-none shadow-sm"
+                                className="w-24 px-2 py-1 text-xs font-mono bg-white dark:bg-[#222625] border border-accent rounded text-right text-[#1a1c1c] dark:text-[#e1e3e2] focus:outline-none shadow-sm"
                               />
                               <button
                                 onClick={() => handleCellSave(source, m.key)}
-                                className="p-1 bg-[#1b6b51] text-white rounded hover:bg-[#15543f] cursor-pointer"
+                                className="p-1 bg-accent text-white dark:text-[#111313] rounded hover:opacity-90 cursor-pointer"
                                 title="Save"
                               >
                                 <Check className="w-3 h-3" />
@@ -313,7 +313,7 @@ export const IncomeScreen: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#1b6b51] hover:bg-[#15543f] text-white text-xs font-semibold rounded transition-colors cursor-pointer shadow-sm"
+                  className="px-4 py-2 bg-accent hover:opacity-95 text-white dark:text-[#111313] text-xs font-semibold rounded transition-colors cursor-pointer shadow-sm"
                 >
                   Create Stream
                 </button>

@@ -432,12 +432,12 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Sub-Type Switch for Equities & Commodities */}
           {(category === 'foreign_stocks' || category === 'nigerian_stocks' || category === 'gold_etfs') && (
-            <div className="flex items-center gap-2 bg-[#f4f3f2] p-1 rounded">
+            <div className="flex items-center gap-2 bg-[#f4f3f2] dark:bg-[#222625] p-1 rounded">
               <button
                 type="button"
                 onClick={() => setSubType('BUY')}
                 className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${
-                  subType === 'BUY' ? 'bg-[#1a1c1c] text-[#faf9f8] shadow-xs' : 'text-[#747878]'
+                  subType === 'BUY' ? 'bg-accent text-white dark:text-[#111313] shadow-xs' : 'text-[#747878] dark:text-[#8c9290]'
                 }`}
               >
                 BUY ORDER (LOT)
@@ -446,7 +446,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                 type="button"
                 onClick={() => setSubType('SELL')}
                 className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${
-                  subType === 'SELL' ? 'bg-[#1a1c1c] text-[#faf9f8] shadow-xs' : 'text-[#747878]'
+                  subType === 'SELL' ? 'bg-accent text-white dark:text-[#111313] shadow-xs' : 'text-[#747878] dark:text-[#8c9290]'
                 }`}
               >
                 SELL ORDER (DISPOSAL)
@@ -1155,7 +1155,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
             </button>
             <button
               type="submit"
-              className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+              className="bg-accent hover:opacity-95 text-white dark:text-[#111313] px-5 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
             >
               <Check className="w-4 h-4" />
               <span>Record Investment</span>

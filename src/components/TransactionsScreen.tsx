@@ -207,43 +207,43 @@ export const TransactionsScreen: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#ffffff] border border-[#e3e2e1] p-6 rounded">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-6 rounded transition-colors">
         <div>
           <div className="flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-[#1a1c1c]" />
-            <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c]">Unified Transactions Ledger</h1>
+            <Receipt className="w-5 h-5 text-accent" />
+            <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2]">Unified Transactions Ledger</h1>
           </div>
-          <p className="text-xs text-[#747878] mt-1">
+          <p className="text-xs text-[#747878] dark:text-[#8c9290] mt-1">
             Complete synchronized transaction history across all 10 investment classes ({allTransactions.length} recorded entries)
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-[#f4f3f2] text-[#1a1c1c] border border-[#e3e2e1]">
+          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-[#f4f3f2] dark:bg-[#222625] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130]">
             {filtered.length} TRANSACTIONS
           </span>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#ffffff] border border-[#e3e2e1] p-4 rounded">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-4 rounded transition-colors">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-[#747878] absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-[#747878] dark:text-[#8c9290] absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder="Search by asset, symbol, or notes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-[#faf9f8] border border-[#e3e2e1] rounded text-xs text-[#1a1c1c] focus:outline-none focus:border-[#1a1c1c]"
+            className="w-full pl-9 pr-3 py-1.5 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded text-xs text-[#1a1c1c] dark:text-[#e1e3e2] focus:outline-none focus:border-accent"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs text-[#747878]">Filter Class:</span>
+          <span className="text-xs text-[#747878] dark:text-[#8c9290]">Filter Class:</span>
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 text-xs font-semibold text-[#1a1c1c]"
+            className="bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 text-xs font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] focus:outline-none focus:border-accent"
           >
             <option value="all">All Asset Classes ({allTransactions.length})</option>
             {Object.entries(CATEGORY_DETAILS).map(([k, v]) => (

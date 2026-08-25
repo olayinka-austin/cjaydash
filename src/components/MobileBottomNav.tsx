@@ -52,7 +52,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             }}
             className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors cursor-pointer ${
               isActive 
-                ? 'text-[#1a1c1c] dark:text-[#e1e3e2] font-semibold' 
+                ? 'text-accent font-semibold' 
                 : 'text-[#747878] dark:text-[#8c9290] hover:text-[#1a1c1c] dark:hover:text-[#e1e3e2]'
             }`}
           >
@@ -68,7 +68,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         className="flex flex-col items-center justify-center px-2 h-full py-1 text-[#1a1c1c] dark:text-[#e1e3e2] hover:text-[#2f3130] dark:hover:text-[#ffffff] cursor-pointer"
         aria-label="Add Investment"
       >
-        <div className="w-7 h-7 rounded-full bg-[#1a1c1c] dark:bg-[#e1e3e2] text-[#faf9f8] dark:text-[#111313] flex items-center justify-center shadow-xs">
+        <div className="w-7 h-7 rounded-full bg-accent text-white dark:text-[#111313] flex items-center justify-center shadow-xs">
           <Plus className="w-4 h-4" />
         </div>
         <span className="text-[9px] mt-0.5 font-medium tracking-tight">Add</span>

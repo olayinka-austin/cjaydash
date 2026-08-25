@@ -96,13 +96,13 @@ export const MaturitiesScreen: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#ffffff] border border-[#e3e2e1] p-6 rounded">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-6 rounded transition-colors">
         <div>
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-[#1a1c1c]" />
-            <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c]">Maturity &amp; Tenor Schedule</h1>
+            <Calendar className="w-5 h-5 text-accent" />
+            <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2]">Maturity &amp; Tenor Schedule</h1>
           </div>
-          <p className="text-xs text-[#747878] mt-1">
+          <p className="text-xs text-[#747878] dark:text-[#8c9290] mt-1">
             Timeline of maturing Commercial Papers, Treasury Bills, and Fintech Locked Deposits
           </p>
         </div>
@@ -111,7 +111,7 @@ export const MaturitiesScreen: React.FC = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 text-xs font-semibold text-[#1a1c1c]"
+            className="bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 text-xs font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] focus:border-accent focus:outline-none"
           >
             <option value="all">All Instruments ({allMaturities.length})</option>
             <option value="commercial_papers">Commercial Papers Only</option>
@@ -193,7 +193,7 @@ export const MaturitiesScreen: React.FC = () => {
                   <td className="py-3.5 px-4 text-right">
                     <button
                       onClick={() => handleOpenSheet(item.category)}
-                      className="text-xs font-semibold text-[#1a1c1c] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1 cursor-pointer"
                     >
                       <span>View</span>
                       <ArrowRight className="w-3 h-3" />

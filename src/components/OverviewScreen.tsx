@@ -156,7 +156,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
             <div className="flex flex-col gap-1.5">
               <button
                 onClick={onOpenAddModal}
-                className="bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                className="bg-accent hover:opacity-95 text-white dark:text-[#111313] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Investment</span>
@@ -165,7 +165,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
                 onClick={onOpenAddPassiveIncomeModal}
                 className="bg-[#faf9f8] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-3.5 py-1.5 rounded text-[11px] font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
-                <Plus className="w-3 h-3 text-[#1b6b51] dark:text-[#60d3a7]" />
+                <Plus className="w-3 h-3 text-accent" />
                 <span>Add Passive Income Source</span>
               </button>
             </div>
@@ -177,7 +177,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
       {!hasInvestments ? (
         <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded p-8 sm:p-12 text-center space-y-4 max-w-2xl mx-auto my-8">
           <div className="w-12 h-12 rounded-full bg-[#f4f3f2] dark:bg-[#222625] text-[#1a1c1c] dark:text-[#e1e3e2] flex items-center justify-center mx-auto">
-            <FolderPlus className="w-6 h-6 text-[#1b6b51] dark:text-[#60d3a7]" />
+            <FolderPlus className="w-6 h-6 text-accent" />
           </div>
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-[#1a1c1c] dark:text-[#e1e3e2]">
@@ -191,7 +191,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
           <div className="flex flex-col items-center justify-center gap-2.5 pt-4 max-w-xs mx-auto">
             <button
               onClick={onOpenAddModal}
-              className="w-full bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-5 py-2.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors"
+              className="w-full bg-accent hover:opacity-95 text-white dark:text-[#111313] px-5 py-2.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
               <span>Add Investment</span>
@@ -200,7 +200,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
               onClick={onOpenAddPassiveIncomeModal}
               className="w-full bg-[#faf9f8] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
-              <Plus className="w-3.5 h-3.5 text-[#1b6b51] dark:text-[#60d3a7]" />
+              <Plus className="w-3.5 h-3.5 text-accent" />
               <span>Add Passive Income Source</span>
             </button>
             <button
@@ -296,18 +296,18 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
                   <div
                     key={cat.category}
                     onClick={() => handleCategoryCardClick(cat.category)}
-                    className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] hover:border-[#1a1c1c] dark:hover:border-[#e1e3e2] p-3.5 rounded cursor-pointer transition-all duration-150 group flex flex-col justify-between"
+                    className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] hover:border-accent dark:hover:border-accent p-3.5 rounded cursor-pointer transition-all duration-150 group flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#f4f3f2] dark:bg-[#222625] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130]">
                           {cat.tag}
                         </span>
-                        <span className="text-xs font-mono font-bold text-[#747878] dark:text-[#8c9290] group-hover:text-[#1a1c1c] dark:group-hover:text-[#e1e3e2]">
+                        <span className="text-xs font-mono font-bold text-[#747878] dark:text-[#8c9290] group-hover:text-accent">
                           {cat.percentage}%
                         </span>
                       </div>
-                      <h3 className="text-xs font-bold text-[#1a1c1c] dark:text-[#e1e3e2] mt-2 group-hover:text-[#1b6b51] dark:group-hover:text-[#60d3a7] transition-colors line-clamp-1">
+                      <h3 className="text-xs font-bold text-[#1a1c1c] dark:text-[#e1e3e2] mt-2 group-hover:text-accent transition-colors line-clamp-1">
                         {cat.label}
                       </h3>
                     </div>
@@ -316,7 +316,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
                       <span className="text-[11px] font-mono font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] tabular-nums">
                         {formatFinancialValue(cat.valueNaira, settings)}
                       </span>
-                      <ArrowUpRight className="w-3 h-3 text-[#747878] dark:text-[#8c9290] group-hover:text-[#1a1c1c] dark:group-hover:text-[#e1e3e2] transition-colors" />
+                      <ArrowUpRight className="w-3 h-3 text-[#747878] dark:text-[#8c9290] group-hover:text-accent transition-colors" />
                     </div>
                   </div>
                 );

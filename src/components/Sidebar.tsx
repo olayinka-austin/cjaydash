@@ -104,21 +104,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarContent = (
     <div className="flex flex-col h-full bg-[#faf9f8] dark:bg-[#151817] text-[#1a1c1c] dark:text-[#e1e3e2] select-none transition-colors">
       {/* Brand Header */}
-      <div className="p-4 sm:p-6 border-b border-[#e3e2e1] dark:border-[#2d3130] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-[#1a1c1c] dark:bg-[#e1e3e2] text-[#faf9f8] dark:text-[#111313] flex items-center justify-center font-bold text-base tracking-tighter shrink-0">
-            II
+      <div className="p-3.5 sm:p-5 border-b border-[#e3e2e1] dark:border-[#2d3130] flex items-center justify-between">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="w-10 h-10 rounded-lg overflow-hidden bg-white dark:bg-[#1f2322] border border-[#e3e2e1] dark:border-[#2d3130] shrink-0 flex items-center justify-center p-0.5 shadow-xs">
+            <img 
+              src="/logo.jpg" 
+              alt="EL-CLASSY TRADER" 
+              className="w-full h-full object-contain"
+            />
           </div>
-          <div>
-            <h1 className="text-sm font-semibold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2]">Investment Intelligence</h1>
-            <p className="text-[11px] font-medium tracking-wider uppercase text-[#747878] dark:text-[#8c9290]">Terminal &middot; 2025/2026</p>
+          <div className="min-w-0">
+            <h1 className="text-xs font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2] truncate">EL-CLASSY TRADER</h1>
+            <p className="text-[10px] font-medium tracking-wider uppercase text-[#747878] dark:text-[#8c9290] truncate">Think Global. Trade Smart.</p>
           </div>
         </div>
 
         {/* Mobile Close Button */}
         <button
           onClick={onCloseMobile}
-          className="lg:hidden p-1.5 text-[#747878] hover:text-[#1a1c1c] dark:text-[#8c9290] dark:hover:text-[#e1e3e2] hover:bg-[#e3e2e1] dark:hover:bg-[#222625] rounded-md transition-colors cursor-pointer"
+          className="lg:hidden p-1.5 text-[#747878] hover:text-[#1a1c1c] dark:text-[#8c9290] dark:hover:text-[#e1e3e2] hover:bg-[#e3e2e1] dark:hover:bg-[#222625] rounded-md transition-colors cursor-pointer shrink-0"
           aria-label="Close Navigation"
         >
           <X className="w-5 h-5" />
@@ -129,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="px-3 sm:px-4 py-3 space-y-2">
         <button
           onClick={handleAddClick}
-          className="w-full bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] px-3 py-2.5 rounded text-[12px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 shadow-sm cursor-pointer min-h-[40px]"
+          className="w-full bg-accent hover:opacity-95 text-white dark:text-[#111313] px-3 py-2.5 rounded text-[12px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 shadow-xs cursor-pointer min-h-[40px]"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Add Investment</span>
@@ -139,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={handleAddPassiveIncomeClick}
           className="w-full bg-[#ffffff] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:hover:bg-[#282c2b] text-[#1a1c1c] dark:text-[#e1e3e2] border border-[#e3e2e1] dark:border-[#2d3130] px-3 py-2 rounded text-[11px] font-semibold tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer min-h-[36px]"
         >
-          <Plus className="w-3.5 h-3.5 text-[#1b6b51] dark:text-[#60d3a7]" />
+          <Plus className="w-3.5 h-3.5 text-accent" />
           <span>Add Passive Income Source</span>
         </button>
       </div>
@@ -160,16 +164,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNavClick(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded text-[13px] font-medium transition-all group text-left cursor-pointer min-h-[38px] ${
                     isActive
-                      ? 'bg-[#ffffff] text-[#1a1c1c] font-semibold shadow-xs border-l-2 border-[#1a1c1c] dark:bg-[#191c1b] dark:text-[#e1e3e2] dark:border-[#e1e3e2]'
+                      ? 'bg-[#ffffff] text-accent font-semibold shadow-xs border-l-2 border-accent dark:bg-[#191c1b]'
                       : 'text-[#444748] dark:text-[#c2c7c5] hover:bg-[#f4f3f2] hover:text-[#1a1c1c] dark:hover:bg-[#222625] dark:hover:text-[#e1e3e2]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#1a1c1c] dark:text-[#e1e3e2]' : 'text-[#747878] dark:text-[#8c9290] group-hover:text-[#1a1c1c] dark:group-hover:text-[#e1e3e2]'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-accent' : 'text-[#747878] dark:text-[#8c9290] group-hover:text-accent'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-[#f4f3f2] text-[#444748] border border-[#e3e2e1] dark:bg-[#222625] dark:text-[#c2c7c5] dark:border-[#2d3130] shrink-0 ml-1.5">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium shrink-0 ml-1.5 ${
+                      isActive
+                        ? 'bg-accent-subtle text-accent border border-accent-subtle'
+                        : 'bg-[#f4f3f2] text-[#444748] border border-[#e3e2e1] dark:bg-[#222625] dark:text-[#c2c7c5] dark:border-[#2d3130]'
+                    }`}>
                       {item.badge}
                     </span>
                   )}

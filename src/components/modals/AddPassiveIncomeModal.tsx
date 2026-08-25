@@ -172,7 +172,7 @@ export const AddPassiveIncomeModal: React.FC<AddPassiveIncomeModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !sourceName.trim()}
-              className="px-4 py-2 bg-[#1a1c1c] hover:bg-[#2f3130] dark:bg-[#e1e3e2] dark:hover:bg-[#ffffff] text-[#faf9f8] dark:text-[#111313] rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer"
+              className="px-4 py-2 bg-accent hover:opacity-95 text-white dark:text-[#111313] rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Adding...' : 'Add Source'}</span>

@@ -108,33 +108,33 @@ export const PortfolioScreen: React.FC = () => {
                   <tr
                     key={item.category}
                     onClick={() => handleSelectCategory(item.category)}
-                    className="hover:bg-[#f4f3f2]/60 cursor-pointer transition-colors group"
+                    className="hover:bg-[#f4f3f2]/60 dark:hover:bg-[#222625]/60 cursor-pointer transition-colors group"
                   >
                     <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-[#f4f3f2] text-[#444748] border border-[#e3e2e1] group-hover:border-[#1a1c1c]">
+                      <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-[#f4f3f2] dark:bg-[#222625] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130] group-hover:border-accent">
                         {item.tag}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-[#1a1c1c] group-hover:text-[#1b6b51] transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-[#1a1c1c] dark:text-[#e1e3e2] group-hover:text-accent transition-colors">
                       {item.label}
                     </td>
                     <td className="py-3.5 px-4 font-mono font-semibold">
                       {detail?.currency === 'USD' ? (
-                        <span className="text-[#1b6b51]">USD ($)</span>
+                        <span className="text-[#1b6b51] dark:text-[#60d3a7]">USD ($)</span>
                       ) : detail?.currency === 'DUAL' ? (
-                        <span className="text-[#b45309]">USD/NGN</span>
+                        <span className="text-[#b45309] dark:text-[#fbbf24]">USD/NGN</span>
                       ) : (
                         <span>NGN (₦)</span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-semibold text-[#1a1c1c] text-right tabular-nums">
+                    <td className="py-3.5 px-4 font-mono font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] text-right tabular-nums">
                       {formatFinancialValue(item.valueNaira, settings)}
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-[#1a1c1c] text-right">
+                    <td className="py-3.5 px-4 font-mono font-bold text-[#1a1c1c] dark:text-[#e1e3e2] text-right">
                       {item.percentage}%
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="text-xs font-semibold text-[#1a1c1c] group-hover:underline inline-flex items-center gap-1">
+                      <span className="text-xs font-semibold text-[#1a1c1c] dark:text-[#e1e3e2] group-hover:text-accent group-hover:underline inline-flex items-center gap-1">
                         <span>Open Sheet</span>
                         <ArrowUpRight className="w-3 h-3" />
                       </span>

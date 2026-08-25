@@ -58,7 +58,7 @@ export const EbookDcaSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
           </div>
           <button
             onClick={() => onOpenAddModal('ebook_dca')}
-            className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+            className="bg-accent hover:opacity-95 text-white dark:text-[#111313] px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Tranche</span>

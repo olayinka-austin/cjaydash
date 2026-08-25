@@ -38,9 +38,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       id={id}
       onClick={onClick}
       className={`bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded p-5 flex flex-col justify-between transition-all duration-150 relative ${
-        highlight ? 'ring-1 ring-[#1a1c1c]/10 dark:ring-[#e1e3e2]/20' : ''
+        highlight ? 'ring-1 ring-accent/30 dark:ring-accent/40 shadow-xs' : ''
       } ${
-        onClick ? 'cursor-pointer hover:border-[#747878] dark:hover:border-[#8c9290] hover:shadow-xs' : ''
+        onClick ? 'cursor-pointer hover:border-accent dark:hover:border-accent hover:shadow-xs' : ''
       }`}
     >
       {/* Top row: Label caps & optional badge */}

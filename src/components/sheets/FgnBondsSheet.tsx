@@ -114,7 +114,7 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
           <button
             onClick={() => setViewMode('CALENDAR')}
             className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer flex items-center gap-1.5 ${
-              viewMode === 'CALENDAR' ? 'bg-[#1a1c1c] text-[#faf9f8]' : 'bg-[#ffffff] text-[#444748] border border-[#e3e2e1] hover:bg-[#f4f3f2]'
+              viewMode === 'CALENDAR' ? 'bg-accent text-white dark:text-[#111313] shadow-xs' : 'bg-[#ffffff] dark:bg-[#191c1b] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130] hover:bg-[#f4f3f2] dark:hover:bg-[#222625]'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -123,7 +123,7 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
           <button
             onClick={() => setViewMode('PORTFOLIO')}
             className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer ${
-              viewMode === 'PORTFOLIO' ? 'bg-[#1a1c1c] text-[#faf9f8]' : 'bg-[#ffffff] text-[#444748] border border-[#e3e2e1] hover:bg-[#f4f3f2]'
+              viewMode === 'PORTFOLIO' ? 'bg-accent text-white dark:text-[#111313] shadow-xs' : 'bg-[#ffffff] dark:bg-[#191c1b] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130] hover:bg-[#f4f3f2] dark:hover:bg-[#222625]'
             }`}
           >
             Bond Portfolio Register ({fgnBondRecords.length})
@@ -132,13 +132,13 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
 
         <div className="flex items-center gap-3">
           {viewMode === 'CALENDAR' && (
-            <div className="flex items-center bg-[#eeeeed] p-0.5 rounded text-xs font-semibold">
+            <div className="flex items-center bg-[#eeeeed] dark:bg-[#222625] p-0.5 rounded text-xs font-semibold">
               {[2025, 2026, 2027, 2028].map((yr) => (
                 <button
                   key={yr}
                   onClick={() => setActiveYear(yr)}
                   className={`px-3 py-1 rounded transition-all cursor-pointer font-mono ${
-                    activeYear === yr ? 'bg-[#ffffff] text-[#1a1c1c] shadow-xs' : 'text-[#747878] hover:text-[#1a1c1c]'
+                    activeYear === yr ? 'bg-accent text-white dark:text-[#111313] shadow-xs' : 'text-[#747878] dark:text-[#8c9290] hover:text-[#1a1c1c] dark:hover:text-[#e1e3e2]'
                   }`}
                 >
                   {yr}
@@ -149,7 +149,7 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
 
           <button
             onClick={() => onOpenAddModal('fgn_bonds')}
-            className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+            className="bg-accent hover:opacity-95 text-white dark:text-[#111313] px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add FGN Bond</span>

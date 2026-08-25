@@ -154,14 +154,14 @@ export const ForeignStocksSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => 
       </div>
 
       {/* Subnavigation Tabs */}
-      <div className="flex items-center justify-between border-b border-[#e3e2e1] pb-3">
+      <div className="flex items-center justify-between border-b border-[#e3e2e1] dark:border-[#2d3130] pb-3">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('BUY')}
             className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer ${
               activeTab === 'BUY'
-                ? 'bg-[#1a1c1c] text-[#faf9f8]'
-                : 'bg-[#ffffff] text-[#444748] border border-[#e3e2e1] hover:bg-[#f4f3f2]'
+                ? 'bg-accent text-white dark:text-[#111313] shadow-xs'
+                : 'bg-[#ffffff] dark:bg-[#191c1b] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130] hover:bg-[#f4f3f2] dark:hover:bg-[#222625]'
             }`}
           >
             Buy Ledger ({foreignStockBuys.length})
@@ -170,8 +170,8 @@ export const ForeignStocksSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => 
             onClick={() => setActiveTab('SELL')}
             className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer ${
               activeTab === 'SELL'
-                ? 'bg-[#1a1c1c] text-[#faf9f8]'
-                : 'bg-[#ffffff] text-[#444748] border border-[#e3e2e1] hover:bg-[#f4f3f2]'
+                ? 'bg-accent text-white dark:text-[#111313] shadow-xs'
+                : 'bg-[#ffffff] dark:bg-[#191c1b] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130] hover:bg-[#f4f3f2] dark:hover:bg-[#222625]'
             }`}
           >
             Sell Ledger ({foreignStockSells.length})
@@ -180,8 +180,8 @@ export const ForeignStocksSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => 
             onClick={() => setActiveTab('RULES')}
             className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'RULES'
-                ? 'bg-[#1a1c1c] text-[#faf9f8]'
-                : 'bg-[#ffffff] text-[#444748] border border-[#e3e2e1] hover:bg-[#f4f3f2]'
+                ? 'bg-accent text-white dark:text-[#111313] shadow-xs'
+                : 'bg-[#ffffff] dark:bg-[#191c1b] text-[#444748] dark:text-[#c2c7c5] border border-[#e3e2e1] dark:border-[#2d3130] hover:bg-[#f4f3f2] dark:hover:bg-[#222625]'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -191,7 +191,7 @@ export const ForeignStocksSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => 
 
         <button
           onClick={() => onOpenAddModal('foreign_stocks')}
-          className="bg-[#1a1c1c] hover:bg-[#2f3130] text-[#faf9f8] px-3.5 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+          className="bg-accent hover:opacity-95 text-white dark:text-[#111313] px-3.5 py-1.5 rounded text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New Stock Trade</span>

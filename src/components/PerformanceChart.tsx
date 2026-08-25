@@ -148,7 +148,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
         </div>
 
         {/* Time Period Filter */}
-        <div className="flex items-center bg-[#eeeeed] p-0.5 rounded text-[11px] font-semibold self-start sm:self-auto overflow-x-auto">
+        <div className="flex items-center bg-[#eeeeed] dark:bg-[#222625] p-0.5 rounded text-[11px] font-semibold self-start sm:self-auto overflow-x-auto">
           {(['1M', '3M', '6M', '1Y', 'ALL'] as const).map((period) => (
             <button
               key={period}
@@ -158,8 +158,8 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
               }}
               className={`px-2 sm:px-2.5 py-1 rounded transition-all cursor-pointer ${
                 selectedPeriod === period
-                  ? 'bg-[#ffffff] text-[#1a1c1c] shadow-xs'
-                  : 'text-[#747878] hover:text-[#1a1c1c]'
+                  ? 'bg-accent text-white dark:text-[#111313] shadow-xs'
+                  : 'text-[#747878] dark:text-[#8c9290] hover:text-[#1a1c1c] dark:hover:text-[#e1e3e2]'
               }`}
             >
               {period}
@@ -182,8 +182,8 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
         >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1a1c1c" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="#1a1c1c" stopOpacity="0.00" />
+              <stop offset="0%" stopColor="var(--color-accent-primary, #1a1c1c)" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="var(--color-accent-primary, #1a1c1c)" stopOpacity="0.00" />
             </linearGradient>
           </defs>
 
@@ -211,8 +211,8 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
           <path
             d={pathD}
             fill="none"
-            stroke="#1a1c1c"
-            strokeWidth="2"
+            stroke="var(--color-accent-primary, #1a1c1c)"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -236,7 +236,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ currentValNa
                   cy={pt.y}
                   r={isHovered ? '6' : '3.5'}
                   fill="#ffffff"
-                  stroke="#1a1c1c"
+                  stroke="var(--color-accent-primary, #1a1c1c)"
                   strokeWidth={isHovered ? '2.5' : '1.5'}
                   className="transition-all duration-150"
                 />
