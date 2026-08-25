@@ -48,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       category: 'INVESTMENT',
       items: [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-        { id: 'investments', label: '10 Investment Sheets', icon: Layers },
+        { id: 'investments', label: 'Investment Classes', icon: Layers },
         { id: 'crypto_investments', label: 'Crypto Investments', icon: Coins, badge: summary.cryptoTotalCount > 0 ? `${summary.cryptoTotalCount}` : undefined },
         { id: 'crypto_day_trades', label: 'Crypto Day Trading', icon: Activity, badge: summary.cryptoTradesTotalCount > 0 ? `${summary.cryptoTradesTotalCount} trades` : undefined },
       ]

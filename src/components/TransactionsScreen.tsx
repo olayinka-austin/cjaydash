@@ -214,7 +214,7 @@ export const TransactionsScreen: React.FC = () => {
             <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2]">Unified Transactions Ledger</h1>
           </div>
           <p className="text-xs text-[#747878] dark:text-[#8c9290] mt-1">
-            Complete synchronized transaction history across all 10 investment classes ({allTransactions.length} recorded entries)
+            Complete synchronized transaction history across all investment classes ({allTransactions.length} recorded entries)
           </p>
         </div>
 

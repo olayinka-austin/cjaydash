@@ -85,7 +85,7 @@ export const InvestmentsScreen: React.FC<InvestmentsScreenProps> = ({ onOpenAddM
               <div>
                 <div className="flex items-center gap-2">
                   <Layers className="w-5 h-5 text-accent" />
-                  <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2]">The 10 Investment Classes</h1>
+                  <h1 className="text-xl font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2]">Investment Classes</h1>
                 </div>
                 <p className="text-xs text-[#747878] dark:text-[#8c9290] mt-1">
                   Select any investment category below to open its dedicated spreadsheet ledger, lot tracking, and formulas

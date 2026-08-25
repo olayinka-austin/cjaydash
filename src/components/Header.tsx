@@ -50,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal, onToggleMobileSi
         if (selectedCategory && selectedCategory !== 'all') {
           return CATEGORY_DETAILS[selectedCategory]?.label || 'Investment Sheet';
         }
-        return '10 Investment Classes';
+        return 'Investment Classes';
       case 'crypto_investments': return 'Crypto Investments (Holdings)';
       case 'crypto_day_trades': return 'Crypto Day Trading (Journal)';
       case 'income': return 'Passive Income & Schedule';

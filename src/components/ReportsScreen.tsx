@@ -478,7 +478,7 @@ export const ReportsScreen: React.FC = () => {
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-4 rounded">
           <div className="text-[11px] font-semibold text-[#747878] uppercase">Itemized Transactions</div>
           <div className="text-lg font-bold font-mono text-[#1a1c1c] mt-1">{allTransactions.length} Entries</div>
-          <div className="text-[11px] text-[#747878] mt-1">Across 10 Investment Classes</div>
+          <div className="text-[11px] text-[#747878] mt-1">Across All Investment Classes</div>
         </div>
 
         <div className="bg-[#ffffff] border border-[#e3e2e1] p-4 rounded">
