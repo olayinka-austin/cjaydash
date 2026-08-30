@@ -21,12 +21,14 @@ import {
   Database,
   BookOpen,
   Landmark,
+  Wallet,
   X
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
 import logoImg from '../assets/logo.jpg';
 import { useAuth } from '../context/AuthContext';
 import { formatNaira, formatFinancialValue } from '../utils/calculations';
+import { BUDGET_TRACKER_URL } from '../config';
 
 interface SidebarProps {
   onOpenAddModal: () => void;
@@ -79,10 +81,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'excel_import', label: 'Excel Import & Sync', icon: FileSpreadsheet },
         { id: 'settings', label: 'Settings & Rates', icon: Settings },
       ]
+    },
+    {
+      category: 'BUDGET TRACKER',
+      items: [
+        { id: 'budget_tracker', label: 'Budget Tracker', icon: Wallet },
+      ]
     }
   ];
 
   const handleNavClick = (screenId: string) => {
+    if (screenId === 'budget_tracker') {
+      onCloseMobile();
+      if (!BUDGET_TRACKER_URL || BUDGET_TRACKER_URL.trim() === '') {
+        alert('Budget Tracker is currently unavailable.');
+        return;
+      }
+      try {
+        window.location.href = BUDGET_TRACKER_URL;
+      } catch (err) {
+        console.error('Failed to navigate to Budget Tracker:', err);
+        window.open(BUDGET_TRACKER_URL, '_self');
+      }
+      return;
+    }
+
     setActiveScreen(screenId);
     if (screenId === 'investments') {
       setSelectedCategory('all');
