@@ -19,6 +19,7 @@ import { ReportsScreen } from './components/ReportsScreen';
 import { VaultScreen } from './components/VaultScreen';
 import { ExcelImportScreen } from './components/ExcelImportScreen';
 import { MarketReferencesScreen } from './components/MarketReferencesScreen';
+import { PlatformDirectoryScreen } from './components/PlatformDirectoryScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { AddInvestmentModal } from './components/modals/AddInvestmentModal';
 import { AddPassiveIncomeModal } from './components/modals/AddPassiveIncomeModal';
@@ -158,6 +159,10 @@ const DashboardContent: React.FC = () => {
 
             {activeScreen === 'market_references' && (
               <MarketReferencesScreen />
+            )}
+
+            {activeScreen === 'platform_directory' && (
+              <PlatformDirectoryScreen />
             )}
 
             {activeScreen === 'analytics' && (

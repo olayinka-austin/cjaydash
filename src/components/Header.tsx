@@ -57,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAddModal, onToggleMobileSi
       case 'maturities': return 'Maturities & Tenors';
       case 'transactions': return 'Unified Ledger';
       case 'market_references': return 'Market References';
+      case 'platform_directory': return 'Investment Platform Directory';
       case 'analytics': return 'Performance & Analytics';
       case 'reports': return 'Financial Reports';
       case 'documents': return 'Document Vault';

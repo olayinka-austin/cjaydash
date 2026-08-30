@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Database,
   BookOpen,
+  Landmark,
   X
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
@@ -71,6 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'maturities', label: 'Maturities & Tenors', icon: Clock, badge: summary.pendingMaturitiesCount > 0 ? `${summary.pendingMaturitiesCount}` : undefined },
         { id: 'transactions', label: 'Transactions Ledger', icon: Receipt },
         { id: 'market_references', label: 'Market References', icon: BookOpen },
+        { id: 'platform_directory', label: 'Investment Platform Directory', icon: Landmark },
         { id: 'analytics', label: 'Analytics & Insights', icon: TrendingUp },
         { id: 'reports', label: 'Financial Reports', icon: FileText },
         { id: 'documents', label: 'Document Vault', icon: FolderLock },

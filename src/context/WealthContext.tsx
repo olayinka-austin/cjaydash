@@ -31,7 +31,8 @@ import {
   InvestmentCategory,
   TradingRuleItem,
   ModuleTradingRules,
-  MarketReferenceRecord
+  MarketReferenceRecord,
+  InvestmentPlatformRecord
 } from '../types';
 import {
   initialAppSettings,
@@ -159,6 +160,12 @@ interface WealthContextType {
   updateMarketReference: (id: string, updates: Partial<MarketReferenceRecord>) => Promise<void>;
   deleteMarketReference: (id: string) => Promise<void>;
 
+  // Investment Platform Directory Records
+  platformDirectoryRecords: InvestmentPlatformRecord[];
+  addInvestmentPlatform: (ref: Omit<InvestmentPlatformRecord, 'id' | 'createdAt'>) => Promise<void>;
+  updateInvestmentPlatform: (id: string, updates: Partial<InvestmentPlatformRecord>) => Promise<void>;
+  deleteInvestmentPlatform: (id: string) => Promise<void>;
+
   // Documents & Settings
   addDocument: (doc: Omit<AppDocument, 'id' | 'uploadDate'>) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
@@ -231,6 +238,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [passiveIncomeMatrixRecords, setPassiveIncomeMatrixRecords] = useState<PassiveIncomeMatrixRecord[]>([]);
   const [documents, setDocuments] = useState<AppDocument[]>([]);
   const [marketReferences, setMarketReferences] = useState<MarketReferenceRecord[]>([]);
+  const [platformDirectoryRecords, setPlatformDirectoryRecords] = useState<InvestmentPlatformRecord[]>([]);
   const [tradingRulesList, setTradingRulesList] = useState<ModuleTradingRules[]>([]);
 
   // Seed master data helper
@@ -287,6 +295,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setPassiveIncomeMatrixRecords([]);
       setDocuments([]);
       setMarketReferences([]);
+      setPlatformDirectoryRecords([]);
       setTradingRulesList([]);
       return;
     }
@@ -342,6 +351,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const unsubPassiveMatrix = createListener<PassiveIncomeMatrixRecord>('passive_income_matrix', setPassiveIncomeMatrixRecords);
     const unsubDocs = createListener<AppDocument>('documents', setDocuments);
     const unsubMarketRef = createListener<MarketReferenceRecord>('market_references', setMarketReferences);
+    const unsubPlatforms = createListener<InvestmentPlatformRecord>('investment_platforms', setPlatformDirectoryRecords);
     const unsubTradingRules = createListener<ModuleTradingRules>('trading_rules', setTradingRulesList);
 
     // Stop loading after initialization
@@ -371,6 +381,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       unsubPassiveMatrix();
       unsubDocs();
       unsubMarketRef();
+      unsubPlatforms();
       unsubTradingRules();
     };
   }, [user]);
@@ -1024,6 +1035,31 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const addInvestmentPlatform = async (record: Omit<InvestmentPlatformRecord, 'id' | 'createdAt'>) => {
+    if (!user) return;
+    const id = 'plat_' + Math.random().toString(36).substring(2, 9);
+    const newRecord: InvestmentPlatformRecord = {
+      ...record,
+      id,
+      createdAt: new Date().toISOString()
+    };
+    setPlatformDirectoryRecords(prev => [newRecord, ...prev]);
+    await saveUserRecord(user.uid, 'investment_platforms', id, newRecord);
+  };
+
+  const updateInvestmentPlatform = async (id: string, updates: Partial<InvestmentPlatformRecord>) => {
+    if (!user) return;
+    const updated = { ...updates, updatedAt: new Date().toISOString() };
+    setPlatformDirectoryRecords(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    await saveUserRecord(user.uid, 'investment_platforms', id, updated);
+  };
+
+  const deleteInvestmentPlatform = async (id: string) => {
+    if (!user) return;
+    setPlatformDirectoryRecords(prev => prev.filter(p => p.id !== id));
+    await deleteUserRecord(user.uid, 'investment_platforms', id);
+  };
+
   return (
     <WealthContext.Provider
       value={{
@@ -1055,6 +1091,10 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         documents,
         documentRecords: documents,
         marketReferences,
+        platformDirectoryRecords,
+        addInvestmentPlatform,
+        updateInvestmentPlatform,
+        deleteInvestmentPlatform,
         tradingRulesList,
         getModuleTradingRules,
         saveModuleTradingRules,

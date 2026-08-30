@@ -440,3 +440,14 @@ export interface ModuleTradingRules extends BaseRecord {
   rules: TradingRuleItem[];
   userId?: string;
 }
+
+// 15. INVESTMENT PLATFORM DIRECTORY RECORD
+export interface InvestmentPlatformRecord extends BaseRecord {
+  platformName: string;
+  websiteUrl: string;
+  interestRate: number;
+  tenureValue: number;
+  tenureUnit: 'Days' | 'Months' | 'Years';
+  remarks?: string;
+}
+
