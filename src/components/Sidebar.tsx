@@ -22,13 +22,14 @@ import {
   BookOpen,
   Landmark,
   Wallet,
+  Store,
   X
 } from 'lucide-react';
 import { useWealth } from '../context/WealthContext';
 import logoImg from '../assets/logo.jpg';
 import { useAuth } from '../context/AuthContext';
 import { formatNaira, formatFinancialValue } from '../utils/calculations';
-import { BUDGET_TRACKER_URL } from '../config';
+import { BUDGET_TRACKER_URL, MINI_MART_URL } from '../config';
 
 interface SidebarProps {
   onOpenAddModal: () => void;
@@ -87,6 +88,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'budget_tracker', label: 'Budget Tracker', icon: Wallet },
       ]
+    },
+    {
+      category: 'MINI MART',
+      items: [
+        { id: 'mini_mart', label: 'Mini Mart', icon: Store },
+      ]
     }
   ];
 
@@ -102,6 +109,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       } catch (err) {
         console.error('Failed to navigate to Budget Tracker:', err);
         window.open(BUDGET_TRACKER_URL, '_self');
+      }
+      return;
+    }
+
+    if (screenId === 'mini_mart') {
+      onCloseMobile();
+      if (!MINI_MART_URL || MINI_MART_URL.trim() === '') {
+        alert('Mini Mart is currently unavailable.');
+        return;
+      }
+      try {
+        window.open(MINI_MART_URL, '_blank', 'noopener,noreferrer');
+      } catch (err) {
+        console.error('Failed to open Mini Mart:', err);
+        window.location.href = MINI_MART_URL;
       }
       return;
     }
