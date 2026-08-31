@@ -10,7 +10,7 @@ export const BUDGET_TRACKER_URL: string =
   import.meta.env.VITE_BUDGET_TRACKER_URL || 'https://cjaytracker.vercel.app';
 
 // Mini Mart Application URL
-// Configured via environment variable VITE_MINI_MART_URL.
+// Configured via environment variable VITE_MINI_MART_URL with fallback to the live deployment.
 export const MINI_MART_URL: string =
-  import.meta.env.VITE_MINI_MART_URL || '';
+  import.meta.env.VITE_MINI_MART_URL || 'https://elclassystoresystem.vercel.app/';
 
