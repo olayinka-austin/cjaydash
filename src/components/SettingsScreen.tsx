@@ -22,7 +22,8 @@ import {
   ShieldCheck,
   Palette,
   Eye,
-  EyeOff
+  EyeOff,
+  Calendar
 } from 'lucide-react';
 import { formatNaira, formatUSD, formatFinancialValue, convertNairaToUsd, convertUsdToNaira } from '../utils/calculations';
 import { AppSettings, ColorTheme } from '../types';
@@ -44,6 +45,9 @@ export const SettingsScreen: React.FC = () => {
   );
   const [notifications, setNotifications] = useState<boolean>(settings?.notificationsEnabled ?? true);
   const [privacyHidden, setPrivacyHidden] = useState<boolean>(settings?.hideAmounts ?? hideAmounts ?? false);
+  const [fgnFrequency, setFgnFrequency] = useState<'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly'>(
+    settings?.fgnInterestFrequency || 'Quarterly'
+  );
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
   // Sync state when settings changes
@@ -93,6 +97,13 @@ export const SettingsScreen: React.FC = () => {
     });
   };
 
+  const handleFgnFrequencyChange = (freq: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly') => {
+    setFgnFrequency(freq);
+    updateSettings({
+      fgnInterestFrequency: freq
+    });
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalUsd = parseFloat(usdRate);
@@ -108,6 +119,7 @@ export const SettingsScreen: React.FC = () => {
       currencyDisplay: selectedCurrency,
       notificationsEnabled: notifications,
       hideAmounts: privacyHidden,
+      fgnInterestFrequency: fgnFrequency,
       preferredDisplayName: displayNameInput.trim() || 'CJ',
       theme: theme,
       colorTheme: colorTheme,
@@ -367,7 +379,48 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. User Profile & Account Settings */}
+      {/* 3. FGN Interest Payment Frequency Setting (Admin) */}
+      <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-6 rounded space-y-4 shadow-2xs transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f4f3f2] dark:border-[#222625]">
+          <div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#1b6b51] dark:text-[#60d3a7]" />
+              <h2 className="text-sm font-bold tracking-tight text-[#1a1c1c] dark:text-[#e1e3e2] uppercase">FGN Interest Payment Frequency</h2>
+            </div>
+            <p className="text-xs text-[#747878] dark:text-[#8c9290] mt-0.5">
+              Admin setting to control how new FGN investments determine their default interest payout period.
+            </p>
+          </div>
+          <span className="text-[11px] font-mono text-[#747878] dark:text-[#8c9290] bg-[#faf9f8] dark:bg-[#222625] px-2.5 py-1 rounded border border-[#e3e2e1] dark:border-[#2d3130] self-start sm:self-auto">
+            Default: <strong className="text-[#1a1c1c] dark:text-[#e1e3e2]">{fgnFrequency}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+          {(['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'] as const).map((freq) => (
+            <button
+              key={freq}
+              type="button"
+              onClick={() => handleFgnFrequencyChange(freq)}
+              className={`p-3.5 rounded-md border text-center transition-all cursor-pointer ${
+                fgnFrequency === freq
+                  ? 'bg-[#1a1c1c] text-[#faf9f8] border-[#1a1c1c] dark:bg-[#e1e3e2] dark:text-[#111313] dark:border-[#e1e3e2] shadow-xs'
+                  : 'bg-[#faf9f8] hover:bg-[#f4f3f2] text-[#444748] border-[#e3e2e1] dark:bg-[#222625] dark:text-[#c2c7c5] dark:border-[#2d3130] dark:hover:bg-[#282c2b]'
+              }`}
+            >
+              <div className="font-bold text-xs">{freq}</div>
+              <div className="text-[10px] text-[#747878] dark:text-[#8c9290] mt-1 font-mono">
+                {freq === 'Monthly' && '12 Payouts / Yr'}
+                {freq === 'Quarterly' && '4 Payouts / Yr (Default)'}
+                {freq === 'Half-Yearly' && '2 Payouts / Yr'}
+                {freq === 'Yearly' && '1 Payout / Yr'}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 4. User Profile & Account Settings */}
       <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] p-6 rounded space-y-4 shadow-2xs transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f4f3f2] dark:border-[#222625]">
           <div>

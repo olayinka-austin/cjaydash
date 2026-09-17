@@ -236,42 +236,58 @@ export const calculateMutualFundCurrentValue = (unitsPurchased: number, currentN
   return { currentValueNaira, gainOrLossNaira };
 };
 
-// 6. FGN Bond Quarterly Interest Calculation
+// 6. FGN Bond Interest Calculation (Supports Monthly, Quarterly, Half-Yearly, Yearly)
 export const calculateFgnBondQuarterlyInterest = (
   amountInvestedNaira: number, 
   interestRatePercent: number,
   taxApplicable: boolean = false,
-  taxRatePercent: number = 0
+  taxRatePercent: number = 0,
+  frequency: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly' = 'Quarterly'
 ) => {
-  const grossQuarterlyInterest = Number(((amountInvestedNaira * (interestRatePercent / 100)) / 4).toFixed(2));
+  let divisor = 4;
+  if (frequency === 'Monthly') divisor = 12;
+  else if (frequency === 'Quarterly') divisor = 4;
+  else if (frequency === 'Half-Yearly') divisor = 2;
+  else if (frequency === 'Yearly') divisor = 1;
+
+  const grossQuarterlyInterest = Number(((amountInvestedNaira * (interestRatePercent / 100)) / divisor).toFixed(2));
   const { taxAmount, netReturn } = calculateTaxAndNetReturn(grossQuarterlyInterest, taxApplicable, taxRatePercent);
   return {
     grossQuarterlyInterest,
     taxAmount,
     netQuarterlyInterest: netReturn,
-    quarterlyInterestNaira: netReturn // Net quarterly return after tax
+    quarterlyInterestNaira: netReturn // Net periodic return after tax
   };
 };
 
 // FGN Bond Dynamic Schedule Resolver
-export const getFgnBondPaymentMonths = (investmentMonth?: string): string[] => {
+export const getFgnBondPaymentMonths = (
+  investmentMonth?: string,
+  frequency: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly' = 'Quarterly'
+): string[] => {
   const monthUpper = (investmentMonth || 'FEBRUARY').toUpperCase().trim();
-  const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-  const monthMap: Record<string, string[]> = {
-    'FEBRUARY': ['MAY', 'AUGUST', 'NOVEMBER', 'FEBRUARY'],
-    'MARCH': ['JUNE', 'SEPTEMBER', 'DECEMBER', 'MARCH'],
-    'APRIL': ['JULY', 'OCTOBER', 'JANUARY', 'APRIL'],
-    'MAY': ['AUGUST', 'NOVEMBER', 'FEBRUARY', 'MAY'],
-    'JUNE': ['SEPTEMBER', 'DECEMBER', 'MARCH', 'JUNE'],
-    'JULY': ['OCTOBER', 'JANUARY', 'APRIL', 'JULY'],
-    'AUGUST': ['NOVEMBER', 'FEBRUARY', 'MAY', 'AUGUST'],
-    'SEPTEMBER': ['DECEMBER', 'MARCH', 'JUNE', 'SEPTEMBER'],
-    'OCTOBER': ['JANUARY', 'APRIL', 'JULY', 'OCTOBER'],
-    'NOVEMBER': ['FEBRUARY', 'MAY', 'AUGUST', 'NOVEMBER'],
-    'DECEMBER': ['MARCH', 'JUNE', 'SEPTEMBER', 'DECEMBER'],
-    'JANUARY': ['APRIL', 'JULY', 'OCTOBER', 'JANUARY'],
-  };
-  return monthMap[monthUpper] || ['FEBRUARY', 'MAY', 'AUGUST', 'NOVEMBER'];
+  const months = [
+    'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+    'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+  ];
+  const startIdx = months.indexOf(monthUpper);
+  const mIdx = startIdx >= 0 ? startIdx : 1; // default Feb
+
+  let step = 3;
+  if (frequency === 'Monthly') step = 1;
+  else if (frequency === 'Quarterly') step = 3;
+  else if (frequency === 'Half-Yearly') step = 6;
+  else if (frequency === 'Yearly') step = 12;
+
+  const count = 12 / step;
+  const paymentMonths: string[] = [];
+
+  for (let i = 1; i <= count; i++) {
+    const targetIdx = (mIdx + i * step) % 12;
+    paymentMonths.push(months[targetIdx]);
+  }
+
+  return paymentMonths;
 };
 
 // 7. Gold ETF Buy Calculations

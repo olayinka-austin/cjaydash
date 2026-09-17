@@ -25,7 +25,8 @@ export const initialAppSettings: AppSettings = {
   maturityReminderDays: 30,
   lastBackupDate: '2026-08-22',
   hideAmounts: false,
-  colorTheme: 'blue'
+  colorTheme: 'blue',
+  fgnInterestFrequency: 'Quarterly'
 };
 
 // 1. UBA Domiciliary DCA

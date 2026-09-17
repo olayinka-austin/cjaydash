@@ -298,8 +298,9 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         const rPct = parseFloat(ratePercent) || 18.00;
         const tYrs = parseInt(tenorYears) || 3;
         const tRate = taxApplicable ? (parseFloat(taxRatePercent) || 0) : 0;
-        const calc = calculateFgnBondQuarterlyInterest(amt, rPct, taxApplicable, tRate);
-        const pMonths = getFgnBondPaymentMonths(investMonth);
+        const freq = settings.fgnInterestFrequency || 'Quarterly';
+        const calc = calculateFgnBondQuarterlyInterest(amt, rPct, taxApplicable, tRate, freq);
+        const pMonths = getFgnBondPaymentMonths(investMonth, freq);
         addFgnBond({
           sNo: Date.now() % 1000,
           broker: broker || 'MERISTERN CHIJIOKE',

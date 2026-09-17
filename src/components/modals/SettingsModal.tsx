@@ -24,6 +24,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         : 'ALL'
   );
   const [autoRefresh, setAutoRefresh] = useState<boolean>(settings?.autoRefreshRates ?? false);
+  const [fgnFrequency, setFgnFrequency] = useState<'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly'>(
+    settings?.fgnInterestFrequency || 'Quarterly'
+  );
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
   if (!isOpen) return null;
@@ -37,6 +40,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       currentUsdExchangeRate: !isNaN(parsedUsd) && parsedUsd > 0 ? parsedUsd : 1780.00,
       currentGoldSpotPriceUsd: !isNaN(parsedGold) && parsedGold > 0 ? parsedGold : 3369.67,
       currencyDisplay: currencyDisplay,
+      fgnInterestFrequency: fgnFrequency,
       theme: theme,
       autoRefreshRates: autoRefresh,
       lastRateUpdate: new Date().toISOString()
@@ -132,6 +136,32 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
               >
                 ₦ &amp; $ Dual
               </button>
+            </div>
+          </div>
+
+          {/* Admin FGN Interest Frequency Setting */}
+          <div className="pt-2 border-t border-[#f4f3f2] dark:border-[#222625]">
+            <label className="text-[11px] font-semibold text-[#747878] dark:text-[#8c9290] uppercase block mb-1">
+              FGN Interest Payment Frequency
+            </label>
+            <p className="text-[11px] text-[#747878] dark:text-[#8c9290] mb-2">
+              Default coupon payment period for new FGN Bond calculations
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'] as const).map((freq) => (
+                <button
+                  key={freq}
+                  type="button"
+                  onClick={() => setFgnFrequency(freq)}
+                  className={`py-2 px-2 rounded border text-center font-bold text-xs cursor-pointer transition-colors ${
+                    fgnFrequency === freq
+                      ? 'bg-[#1a1c1c] text-[#faf9f8] border-[#1a1c1c] dark:bg-[#e1e3e2] dark:text-[#111313] dark:border-[#e1e3e2]'
+                      : 'bg-[#faf9f8] text-[#444748] border-[#e3e2e1] hover:bg-[#f4f3f2] dark:bg-[#222625] dark:text-[#c2c7c5] dark:border-[#2d3130] dark:hover:bg-[#282c2b]'
+                  }`}
+                >
+                  {freq}
+                </button>
+              ))}
             </div>
           </div>
 

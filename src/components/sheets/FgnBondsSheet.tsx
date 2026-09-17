@@ -54,19 +54,31 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
 
   const getCouponForMonth = (record: any, month: string, year: number): number => {
     if (!record) return 0;
-    const targetMonth = (month || '').toUpperCase();
-    const isPaymentMonth = record.paymentMonths?.some((m: string) => (m || '').toUpperCase() === targetMonth);
+    const targetMonth = (month || '').toUpperCase().trim();
+    const isPaymentMonth = record.paymentMonths?.some((m: string) => (m || '').toUpperCase().trim() === targetMonth);
     if (!isPaymentMonth) return 0;
 
     const startYear = record.investmentYear || 2025;
-    const endYear = startYear + (record.tenorYears || 3);
+    const tenorYears = record.tenorYears || 3;
+    const endYear = startYear + tenorYears;
 
-    if (year === startYear) {
-      return isPaymentMonth ? record.quarterlyInterestNaira : 0;
-    } else if (year > startYear && year <= endYear) {
-      return record.quarterlyInterestNaira;
+    const startMonthStr = (record.investmentMonth || 'FEBRUARY').toUpperCase().trim();
+    const startMonthIdx = calendarMonths.indexOf(startMonthStr);
+    const targetMonthIdx = calendarMonths.indexOf(targetMonth);
+
+    if (year < startYear || year > endYear) return 0;
+
+    // In the investment start year, interest is never applied to a completed period before/on the investment date
+    if (year === startYear && targetMonthIdx <= startMonthIdx) {
+      return 0;
     }
-    return 0;
+
+    // In the maturity end year, interest is only applied on or before the maturity month
+    if (year === endYear && targetMonthIdx > startMonthIdx) {
+      return 0;
+    }
+
+    return record.quarterlyInterestNaira || 0;
   };
 
   const monthlyTotals = calendarMonths.map(month => {
