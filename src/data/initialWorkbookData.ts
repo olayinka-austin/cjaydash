@@ -315,7 +315,7 @@ export const initialTreasuryBillRecords: TreasuryBillRecord[] = [
   }
 ];
 
-// 7. Mutual Funds
+// 7. Mutual Funds (Managed Funds, Emergency Funds, and Mini Mart Funds)
 export const initialMutualFundRecords: MutualFundRecord[] = [
   {
     id: 'mf-1',
@@ -331,7 +331,8 @@ export const initialMutualFundRecords: MutualFundRecord[] = [
     currentValueNaira: 50000.00,
     gainOrLossNaira: 0.00,
     status: 'Active',
-    notes: 'Initial monthly allocation'
+    notes: 'Initial monthly allocation',
+    investmentClass: 'mutual_funds'
   },
   {
     id: 'mf-2',
@@ -346,7 +347,8 @@ export const initialMutualFundRecords: MutualFundRecord[] = [
     currentNavPerUnitNaira: 10.75,
     currentValueNaira: 50000.00,
     gainOrLossNaira: 0.00,
-    status: 'Active'
+    status: 'Active',
+    investmentClass: 'mutual_funds'
   },
   {
     id: 'mf-3',
@@ -361,7 +363,42 @@ export const initialMutualFundRecords: MutualFundRecord[] = [
     currentNavPerUnitNaira: 11.00,
     currentValueNaira: 50000.00,
     gainOrLossNaira: 0.00,
-    status: 'Active'
+    status: 'Active',
+    investmentClass: 'mutual_funds'
+  },
+  {
+    id: 'ef-1',
+    createdAt: '2025-01-15T00:00:00Z',
+    sNo: 1,
+    month: 'Jan-2025',
+    investmentDate: '2025-01-15',
+    fundName: 'Stanbic IBTC Money Market Fund',
+    amountInvestedNaira: 150000.00,
+    navPerUnitAtPurchaseNaira: 1.00,
+    unitsPurchased: 150000.00,
+    currentNavPerUnitNaira: 1.00,
+    currentValueNaira: 150000.00,
+    gainOrLossNaira: 0.00,
+    status: 'Active',
+    notes: 'Liquid emergency fund reserve tranche 1',
+    investmentClass: 'emergency_funds'
+  },
+  {
+    id: 'mmf-1',
+    createdAt: '2025-02-10T00:00:00Z',
+    sNo: 1,
+    month: 'Feb-2025',
+    investmentDate: '2025-02-10',
+    fundName: 'Mini Mart Inventory Reserve Fund',
+    amountInvestedNaira: 200000.00,
+    navPerUnitAtPurchaseNaira: 100.00,
+    unitsPurchased: 2000.00,
+    currentNavPerUnitNaira: 105.00,
+    currentValueNaira: 210000.00,
+    gainOrLossNaira: 10000.00,
+    status: 'Active',
+    notes: 'Mini Mart retail store inventory capital tranche',
+    investmentClass: 'mini_mart_funds'
   }
 ];
 

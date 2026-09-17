@@ -341,7 +341,35 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const unsubEbook = createListener<EbookDcaRecord>('ebook_dca', setEbookDcaRecords);
     const unsubCp = createListener<CommercialPaperRecord>('commercial_papers', setCommercialPaperRecords);
     const unsubTb = createListener<TreasuryBillRecord>('treasury_bills', setTreasuryBillRecords);
-    const unsubMf = createListener<MutualFundRecord>('mutual_funds', setMutualFundRecords);
+    const unsubMf = createListener<MutualFundRecord>('mutual_funds', (items) => {
+      setMutualFundRecords(prev => {
+        const otherItems = prev.filter(p => p.id.startsWith('ef-') || p.id.startsWith('mmf-') || p.investmentClass === 'emergency_funds' || p.investmentClass === 'mini_mart_funds');
+        const map = new Map();
+        items.forEach(it => map.set(it.id, it));
+        otherItems.forEach(it => {
+          if (!map.has(it.id)) map.set(it.id, it);
+        });
+        return Array.from(map.values());
+      });
+    });
+    const unsubEmergency = createListener<MutualFundRecord>('emergency_funds', (items) => {
+      if (items && items.length > 0) {
+        setMutualFundRecords(prev => {
+          const map = new Map(prev.map(p => [p.id, p]));
+          items.forEach(it => map.set(it.id, { ...it, investmentClass: 'emergency_funds' }));
+          return Array.from(map.values());
+        });
+      }
+    });
+    const unsubMiniMart = createListener<MutualFundRecord>('mini_mart_funds', (items) => {
+      if (items && items.length > 0) {
+        setMutualFundRecords(prev => {
+          const map = new Map(prev.map(p => [p.id, p]));
+          items.forEach(it => map.set(it.id, { ...it, investmentClass: 'mini_mart_funds' }));
+          return Array.from(map.values());
+        });
+      }
+    });
     const unsubFgn = createListener<FgnBondRecord>('fgn_bonds', setFgnBondRecords);
     const unsubGoldBuys = createListener<GoldEtfBuyRecord>('gold_etf_buys', setGoldEtfBuys);
     const unsubGoldSells = createListener<GoldEtfSellRecord>('gold_etf_sells', setGoldEtfSells);
@@ -372,6 +400,8 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       unsubCp();
       unsubTb();
       unsubMf();
+      unsubEmergency();
+      unsubMiniMart();
       unsubFgn();
       unsubGoldBuys();
       unsubGoldSells();
@@ -432,10 +462,26 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const tbInterestNaira = treasuryBillRecords.reduce((acc, r) => acc + (r.interestEarnedNaira || 0), 0);
     const tbTotalAtMaturityNaira = treasuryBillRecords.reduce((acc, r) => acc + (r.totalAtMaturityNaira || 0), 0);
 
-    // 7. Mutual Funds
-    const mfInvestedNaira = mutualFundRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
-    const mfCurrentValueNaira = mutualFundRecords.reduce((acc, r) => acc + (r.currentValueNaira || 0), 0);
-    const mfGainOrLossNaira = mutualFundRecords.reduce((acc, r) => acc + (r.gainOrLossNaira || 0), 0);
+    // 7. Mutual Funds, Emergency Funds, and Mini Mart Funds
+    const isEmergencyRecord = (r: MutualFundRecord) => r.investmentClass === 'emergency_funds' || r.investmentClass === 'emergency-funds';
+    const isMiniMartRecord = (r: MutualFundRecord) => r.investmentClass === 'mini_mart_funds' || r.investmentClass === 'mini-mart-funds';
+    const isPureMfRecord = (r: MutualFundRecord) => !r.investmentClass || r.investmentClass === 'mutual_funds' || r.investmentClass === 'mutual-funds';
+
+    const pureMfRecords = mutualFundRecords.filter(isPureMfRecord);
+    const emergencyRecords = mutualFundRecords.filter(isEmergencyRecord);
+    const miniMartRecords = mutualFundRecords.filter(isMiniMartRecord);
+
+    const mfInvestedNaira = pureMfRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
+    const mfCurrentValueNaira = pureMfRecords.reduce((acc, r) => acc + (r.currentValueNaira || 0), 0);
+    const mfGainOrLossNaira = pureMfRecords.reduce((acc, r) => acc + (r.gainOrLossNaira || 0), 0);
+
+    const emergencyInvestedNaira = emergencyRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
+    const emergencyCurrentValueNaira = emergencyRecords.reduce((acc, r) => acc + (r.currentValueNaira || 0), 0);
+    const emergencyGainOrLossNaira = emergencyRecords.reduce((acc, r) => acc + (r.gainOrLossNaira || 0), 0);
+
+    const miniMartInvestedNaira = miniMartRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
+    const miniMartCurrentValueNaira = miniMartRecords.reduce((acc, r) => acc + (r.currentValueNaira || 0), 0);
+    const miniMartGainOrLossNaira = miniMartRecords.reduce((acc, r) => acc + (r.gainOrLossNaira || 0), 0);
 
     // 8. FGN Savings Bonds
     const fgnInvestedNaira = fgnBondRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
@@ -498,6 +544,8 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       cpInvestedNaira +
       tbInvestedNaira +
       mfInvestedNaira +
+      emergencyInvestedNaira +
+      miniMartInvestedNaira +
       fgnInvestedNaira +
       goldBuyTotalNaira +
       lockedInvestedNaira +
@@ -512,6 +560,8 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       cpTotalAtMaturityNaira +
       tbTotalAtMaturityNaira +
       mfCurrentValueNaira +
+      emergencyCurrentValueNaira +
+      miniMartCurrentValueNaira +
       fgnInvestedNaira +
       (goldNetQty > 0 ? goldCurrentValueNaira : 0) +
       lockedTotalValueNaira +
@@ -525,7 +575,7 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const totalRealizedProfitUsd = fsRealizedProfitUsd + ngRealizedProfitUsd + goldRealizedProfitUsd + cryptoTradesNetPlUsd;
 
     // Unrealized
-    const totalUnrealizedProfitNaira = mfGainOrLossNaira + (ubaCurrentValueNaira - ubaCostNaira) + (ebookCurrentValueNaira - ebookCostNaira) + cryptoUnrealizedGainNaira;
+    const totalUnrealizedProfitNaira = mfGainOrLossNaira + emergencyGainOrLossNaira + miniMartGainOrLossNaira + (ubaCurrentValueNaira - ubaCostNaira) + (ebookCurrentValueNaira - ebookCostNaira) + cryptoUnrealizedGainNaira;
 
     // Passive Income Aggregates (Pure cash flow generated from assets, not double counted as capital)
     const totalAnnualPassiveIncomeNaira = fgnAnnualInterestNaira + cpInterestNaira + tbInterestNaira + lockedInterestNaira;
@@ -562,7 +612,9 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       { category: 'treasury_bills', label: 'Treasury Bills', valueNaira: tbTotalAtMaturityNaira, color: CATEGORY_DETAILS.treasury_bills.color },
       { category: 'foreign_stocks', label: 'Foreign Stocks (Buy/Sell)', valueNaira: fsCostNaira, color: CATEGORY_DETAILS.foreign_stocks.color },
       { category: 'gold_etfs', label: 'Gold ETFs', valueNaira: goldBuyTotalNaira, color: CATEGORY_DETAILS.gold_etfs.color },
-      { category: 'mutual_funds', label: 'Mutual Funds', valueNaira: mfCurrentValueNaira, color: CATEGORY_DETAILS.mutual_funds.color },
+      { category: 'mutual_funds', label: 'Mutual Funds (Managed Funds)', valueNaira: mfCurrentValueNaira, color: CATEGORY_DETAILS.mutual_funds.color },
+      { category: 'emergency_funds', label: 'Emergency Funds', valueNaira: emergencyCurrentValueNaira, color: CATEGORY_DETAILS.emergency_funds.color },
+      { category: 'mini_mart_funds', label: 'Mini Mart Funds', valueNaira: miniMartCurrentValueNaira, color: CATEGORY_DETAILS.mini_mart_funds.color },
       { category: 'uba_dca', label: 'UBA Domiciliary DCA', valueNaira: ubaCurrentValueNaira, color: CATEGORY_DETAILS.uba_dca.color },
       { category: 'ebook_dca', label: 'Ebook DCA Stocks', valueNaira: ebookCurrentValueNaira, color: CATEGORY_DETAILS.ebook_dca.color },
       { category: 'nigerian_stocks', label: 'Nigerian Stocks', valueNaira: ngCostNaira, color: CATEGORY_DETAILS.nigerian_stocks.color },
@@ -762,18 +814,40 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addMutualFund = async (record: Omit<MutualFundRecord, 'id' | 'createdAt'>) => {
     if (!user) return;
-    const id = `mf-${Date.now()}`;
-    await saveUserRecord(user.uid, 'mutual_funds', id, { ...record, createdAt: new Date().toISOString() });
+    const invClass = record.investmentClass || 'mutual_funds';
+    const isEmerg = invClass === 'emergency_funds' || invClass === 'emergency-funds';
+    const isMini = invClass === 'mini_mart_funds' || invClass === 'mini-mart-funds';
+    const prefix = isEmerg ? 'ef' : isMini ? 'mmf' : 'mf';
+    const id = `${prefix}-${Date.now()}`;
+    const payload = { ...record, investmentClass: invClass, createdAt: new Date().toISOString() };
+    await saveUserRecord(user.uid, 'mutual_funds', id, payload);
+    if (isEmerg) {
+      try { await saveUserRecord(user.uid, 'emergency_funds', id, payload); } catch (_) {}
+    } else if (isMini) {
+      try { await saveUserRecord(user.uid, 'mini_mart_funds', id, payload); } catch (_) {}
+    }
   };
 
   const updateMutualFund = async (id: string, updates: Partial<MutualFundRecord>) => {
     if (!user) return;
     await saveUserRecord(user.uid, 'mutual_funds', id, updates);
+    if (id.startsWith('ef') || updates.investmentClass === 'emergency_funds' || updates.investmentClass === 'emergency-funds') {
+      try { await saveUserRecord(user.uid, 'emergency_funds', id, updates); } catch (_) {}
+    }
+    if (id.startsWith('mmf') || updates.investmentClass === 'mini_mart_funds' || updates.investmentClass === 'mini-mart-funds') {
+      try { await saveUserRecord(user.uid, 'mini_mart_funds', id, updates); } catch (_) {}
+    }
   };
 
   const deleteMutualFund = async (id: string) => {
     if (!user) return;
     await deleteUserRecord(user.uid, 'mutual_funds', id);
+    if (id.startsWith('ef')) {
+      try { await deleteUserRecord(user.uid, 'emergency_funds', id); } catch (_) {}
+    }
+    if (id.startsWith('mmf')) {
+      try { await deleteUserRecord(user.uid, 'mini_mart_funds', id); } catch (_) {}
+    }
   };
 
   const addFgnBond = async (record: Omit<FgnBondRecord, 'id' | 'createdAt'>) => {

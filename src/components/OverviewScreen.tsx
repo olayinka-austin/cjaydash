@@ -278,7 +278,7 @@ export const OverviewScreen: React.FC<OverviewProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-[#1a1c1c] dark:text-[#e1e3e2]">Investment Categories (10 Classes)</h2>
+                <h2 className="text-sm font-semibold text-[#1a1c1c] dark:text-[#e1e3e2]">Investment Categories ({summary.assetAllocation.length} Classes)</h2>
                 <p className="text-xs text-[#747878] dark:text-[#8c9290]">Select any asset class to open its dedicated ledger &amp; formula calculator</p>
               </div>
               <button

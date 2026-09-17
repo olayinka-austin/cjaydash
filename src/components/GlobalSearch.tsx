@@ -253,21 +253,26 @@ export const GlobalSearch: React.FC = () => {
       });
     });
 
-    // 7. Mutual Funds
+    // 7. Mutual Funds, Emergency Funds, Mini Mart Funds
     mutualFundRecords.forEach((r) => {
       const isGain = (r.gainOrLossNaira || 0) >= 0;
+      const isEmerg = r.investmentClass === 'emergency_funds' || r.investmentClass === 'emergency-funds' || r.id.startsWith('ef-');
+      const isMini = r.investmentClass === 'mini_mart_funds' || r.investmentClass === 'mini-mart-funds' || r.id.startsWith('mmf-');
+      const cat: InvestmentCategory = isEmerg ? 'emergency_funds' : isMini ? 'mini_mart_funds' : 'mutual_funds';
+      const ticker = isEmerg ? 'EF' : isMini ? 'MMF' : 'MF';
+      const fallbackTitle = isEmerg ? 'Emergency Fund Asset' : isMini ? 'Mini Mart Fund Asset' : 'Mutual Fund Asset';
       items.push({
         id: r.id,
-        category: 'mutual_funds',
-        title: r.fundName || 'Mutual Fund Asset',
+        category: cat,
+        title: r.fundName || fallbackTitle,
         subtitle: `${(r.unitsPurchased || 0).toLocaleString()} Units @ ₦${r.currentNavPerUnitNaira || 0} NAV`,
-        symbolOrTicker: 'MF',
-        platform: 'Fund Manager',
+        symbolOrTicker: ticker,
+        platform: isEmerg ? 'Emergency Vault' : isMini ? 'Mini Mart Treasury' : 'Fund Manager',
         primaryValue: formatNaira(r.currentValueNaira || r.amountInvestedNaira || 0),
         secondaryValue: `${isGain ? '+' : ''}${formatNaira(r.gainOrLossNaira || 0)} P/L`,
         date: r.investmentDate,
         status: r.status || 'Active',
-        rawSearchText: `mutual funds money market arm aggressive growth leadway stanbic ibtc fbnquest fund ${r.fundName || ''} ${r.month || ''} ${r.status || ''}`.toLowerCase(),
+        rawSearchText: `mutual funds emergency funds mini mart funds money market arm aggressive growth leadway stanbic ibtc fbnquest fund ${r.fundName || ''} ${r.month || ''} ${r.status || ''}`.toLowerCase(),
         actionType: 'sheet'
       });
     });

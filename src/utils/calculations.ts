@@ -373,11 +373,46 @@ export const CATEGORY_DETAILS: Record<string, { label: string; tag: string; colo
     description: 'Federal Government T-Bills with fixed tenor and guaranteed maturity interest.'
   },
   mutual_funds: {
-    label: 'Mutual Funds',
+    label: 'Mutual Funds (Managed Funds)',
     tag: 'Managed Funds',
     color: '#0284c7',
     currency: 'NGN',
     description: 'Open-ended collective investment funds tracked by purchase NAV and current NAV.'
+  },
+  emergency_funds: {
+    label: 'Emergency Funds',
+    tag: 'Reserve Funds',
+    color: '#0891b2',
+    currency: 'NGN',
+    description: 'Liquid emergency fund reserves tracked by purchase NAV, units, and valuation.'
+  },
+  mini_mart_funds: {
+    label: 'Mini Mart Funds',
+    tag: 'Retail Funds',
+    color: '#059669',
+    currency: 'NGN',
+    description: 'Mini mart retail capital and inventory investment reserves tracked by NAV and units.'
+  },
+  'mutual-funds': {
+    label: 'Mutual Funds (Managed Funds)',
+    tag: 'Managed Funds',
+    color: '#0284c7',
+    currency: 'NGN',
+    description: 'Open-ended collective investment funds tracked by purchase NAV and current NAV.'
+  },
+  'emergency-funds': {
+    label: 'Emergency Funds',
+    tag: 'Reserve Funds',
+    color: '#0891b2',
+    currency: 'NGN',
+    description: 'Liquid emergency fund reserves tracked by purchase NAV, units, and valuation.'
+  },
+  'mini-mart-funds': {
+    label: 'Mini Mart Funds',
+    tag: 'Retail Funds',
+    color: '#059669',
+    currency: 'NGN',
+    description: 'Mini mart retail capital and inventory investment reserves tracked by NAV and units.'
   },
   fgn_bonds: {
     label: 'FGN Savings Bonds',

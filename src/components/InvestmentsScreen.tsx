@@ -29,6 +29,8 @@ export const InvestmentsScreen: React.FC<InvestmentsScreenProps> = ({ onOpenAddM
     'commercial_papers',
     'treasury_bills',
     'mutual_funds',
+    'emergency_funds',
+    'mini_mart_funds',
     'fgn_bonds',
     'gold_etfs',
     'locked_savings'
@@ -50,7 +52,7 @@ export const InvestmentsScreen: React.FC<InvestmentsScreenProps> = ({ onOpenAddM
             <span className={`text-[10px] font-mono font-bold ${selectedCategory === 'all' ? 'text-white/80 dark:text-[#111313]/80' : 'text-[#747878] dark:text-[#8c9290]'}`}>
               ALL
             </span>
-            <span>All 10 Categories</span>
+            <span>All {categoryKeys.length} Categories</span>
           </button>
 
           {categoryKeys.map((catKey) => {
@@ -160,7 +162,13 @@ export const InvestmentsScreen: React.FC<InvestmentsScreenProps> = ({ onOpenAddM
           <TreasuryBillsSheet onOpenAddModal={() => onOpenAddModal('treasury_bills')} />
         )}
         {selectedCategory === 'mutual_funds' && (
-          <MutualFundsSheet onOpenAddModal={() => onOpenAddModal('mutual_funds')} />
+          <MutualFundsSheet category="mutual_funds" title="Mutual Funds (Managed Funds)" onOpenAddModal={() => onOpenAddModal('mutual_funds')} />
+        )}
+        {selectedCategory === 'emergency_funds' && (
+          <MutualFundsSheet category="emergency_funds" title="Emergency Funds" onOpenAddModal={() => onOpenAddModal('emergency_funds')} />
+        )}
+        {selectedCategory === 'mini_mart_funds' && (
+          <MutualFundsSheet category="mini_mart_funds" title="Mini Mart Funds" onOpenAddModal={() => onOpenAddModal('mini_mart_funds')} />
         )}
         {selectedCategory === 'fgn_bonds' && (
           <FgnBondsSheet onOpenAddModal={() => onOpenAddModal('fgn_bonds')} />

@@ -167,17 +167,22 @@ export const ReportsScreen: React.FC = () => {
       amountSecondary: null,
       details: `${r.tenorDays ?? 0}d @ ${r.ratePercent ?? 0}%`
     })),
-    ...mutualFundRecords.map(r => ({
-      id: r.id,
-      date: r.investmentDate || '',
-      category: 'mutual_funds' as InvestmentCategory,
-      assetName: `${r.fundName || 'Mutual Fund'}`,
-      type: 'BUY',
-      currency: 'NGN',
-      amountPrimary: r.amountInvestedNaira || 0,
-      amountSecondary: null,
-      details: `${(r.unitsPurchased ?? 0).toLocaleString()} units @ NAV ₦${(r.navPerUnitAtPurchaseNaira ?? 0).toLocaleString()}`
-    })),
+    ...mutualFundRecords.map(r => {
+      const isEmerg = r.investmentClass === 'emergency_funds' || r.investmentClass === 'emergency-funds' || r.id.startsWith('ef-');
+      const isMini = r.investmentClass === 'mini_mart_funds' || r.investmentClass === 'mini-mart-funds' || r.id.startsWith('mmf-');
+      const cat: InvestmentCategory = isEmerg ? 'emergency_funds' : isMini ? 'mini_mart_funds' : 'mutual_funds';
+      return {
+        id: r.id,
+        date: r.investmentDate || '',
+        category: cat,
+        assetName: `${r.fundName || (isEmerg ? 'Emergency Fund' : isMini ? 'Mini Mart Fund' : 'Mutual Fund')}`,
+        type: 'BUY',
+        currency: 'NGN',
+        amountPrimary: r.amountInvestedNaira || 0,
+        amountSecondary: null,
+        details: `${(r.unitsPurchased ?? 0).toLocaleString()} units @ NAV ₦${(r.navPerUnitAtPurchaseNaira ?? 0).toLocaleString()}`
+      };
+    }),
     ...fgnBondRecords.map(r => ({
       id: r.id,
       date: `${r.investmentMonth || ''} ${r.investmentYear || ''}`.trim(),

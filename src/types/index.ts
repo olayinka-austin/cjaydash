@@ -8,6 +8,8 @@ export type InvestmentCategory =
   | 'commercial_papers'
   | 'treasury_bills'
   | 'mutual_funds'
+  | 'emergency_funds'
+  | 'mini_mart_funds'
   | 'fgn_bonds'
   | 'gold_etfs'
   | 'locked_savings';
@@ -158,6 +160,7 @@ export interface MutualFundRecord extends BaseRecord {
   gainOrLossNaira: number; // currentValueNaira - amountInvestedNaira
   status: 'Active' | 'Redeemed' | 'Pending';
   notes?: string;
+  investmentClass?: 'mutual_funds' | 'emergency_funds' | 'mini_mart_funds' | 'mutual-funds' | 'emergency-funds' | 'mini-mart-funds';
 }
 
 // 8. FGN SAVINGS BONDS

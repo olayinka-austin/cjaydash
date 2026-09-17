@@ -82,9 +82,23 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
 
   useEffect(() => {
     if (defaultCategory && defaultCategory !== 'all') {
-      setCategory(defaultCategory);
+      const canonical = (defaultCategory === 'emergency-funds' 
+        ? 'emergency_funds' 
+        : defaultCategory === 'mini-mart-funds' 
+        ? 'mini_mart_funds' 
+        : defaultCategory === 'mutual-funds' 
+        ? 'mutual_funds' 
+        : defaultCategory) as InvestmentCategory;
+      setCategory(canonical);
+      if (canonical === 'emergency_funds') {
+        setFundName('Emergency Liquid Fund');
+      } else if (canonical === 'mini_mart_funds') {
+        setFundName('Mini Mart Inventory Fund');
+      } else if (canonical === 'mutual_funds') {
+        setFundName('ABC Equity Fund');
+      }
       // Initialize tax defaults based on investment category
-      if (defaultCategory === 'locked_savings') {
+      if (canonical === 'locked_savings') {
         setTaxApplicable(true);
         setTaxRatePercent('10.00');
       } else {
@@ -271,17 +285,24 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         });
         break;
       }
-      case 'mutual_funds': {
+      case 'mutual_funds':
+      case 'emergency_funds':
+      case 'mini_mart_funds': {
         const amt = parseFloat(amount) || 50000;
         const pNav = parseFloat(navAtPurchase) || 10.50;
         const cNav = parseFloat(currentNav) || pNav;
         const units = calculateMutualFundUnits(amt, pNav);
         const curVal = units * cNav;
+        const defaultFundName = category === 'emergency_funds' 
+          ? 'Emergency Liquid Fund' 
+          : category === 'mini_mart_funds' 
+          ? 'Mini Mart Inventory Fund' 
+          : 'ABC Equity Fund';
         addMutualFund({
           sNo: Date.now() % 1000,
           month: monthName || 'Jan-2025',
           investmentDate: date,
-          fundName: fundName || 'ABC Equity Fund',
+          fundName: fundName || defaultFundName,
           amountInvestedNaira: amt,
           navPerUnitAtPurchaseNaira: pNav,
           unitsPurchased: units,
@@ -289,7 +310,8 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
           currentValueNaira: curVal,
           gainOrLossNaira: curVal - amt,
           status: 'Active',
-          notes: remark
+          notes: remark,
+          investmentClass: category
         });
         break;
       }
@@ -416,17 +438,31 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
           </label>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value as InvestmentCategory)}
+            onChange={(e) => {
+              const newCat = e.target.value as InvestmentCategory;
+              setCategory(newCat);
+              if (newCat === 'emergency_funds') {
+                setFundName('Emergency Liquid Fund');
+              } else if (newCat === 'mini_mart_funds') {
+                setFundName('Mini Mart Inventory Fund');
+              } else if (newCat === 'mutual_funds') {
+                setFundName('ABC Equity Fund');
+              }
+            }}
             className="w-full bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-2 text-xs font-semibold text-[#1a1c1c] focus:outline-none focus:border-[#1a1c1c]"
           >
-            {(Object.keys(CATEGORY_DETAILS) as InvestmentCategory[]).map((key) => {
-              const val = CATEGORY_DETAILS[key];
-              return (
-                <option key={key} value={key}>
-                  {val.label} ({val.tag})
-                </option>
-              );
-            })}
+            <option value="uba_dca">UBA Domiciliary Savings (DCA) (FX Reserve)</option>
+            <option value="foreign_stocks">Foreign Stock Trading (Equities (USD))</option>
+            <option value="nigerian_stocks">Nigerian Stock Trading (Equities (NGN))</option>
+            <option value="ebook_dca">Ebook DCA Stocks (O REITs) (Monthly Dividend)</option>
+            <option value="commercial_papers">Commercial Papers (Fixed Income)</option>
+            <option value="treasury_bills">Treasury Bills (Sovereign Debt)</option>
+            <option value="mutual_funds">Mutual Funds (Managed Funds) (Managed Funds)</option>
+            <option value="emergency_funds">Emergency Funds (Reserve Funds)</option>
+            <option value="mini_mart_funds">Mini Mart Funds (Retail Funds)</option>
+            <option value="fgn_bonds">FGN Savings Bonds (Passive Income)</option>
+            <option value="gold_etfs">Gold ETFs (Commodities)</option>
+            <option value="locked_savings">Locked Savings & Fintech (High-Yield Cash)</option>
           </select>
         </div>
 
@@ -744,11 +780,13 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
               </>
             )}
 
-            {/* Category: Mutual Funds */}
-            {category === 'mutual_funds' && (
+            {/* Category: Mutual Funds / Emergency Funds / Mini Mart Funds */}
+            {(category === 'mutual_funds' || category === 'emergency_funds' || category === 'mini_mart_funds') && (
               <>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Fund Name</label>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">
+                    {category === 'emergency_funds' ? 'Emergency Fund Name / Vault' : category === 'mini_mart_funds' ? 'Mini Mart Fund / Asset' : 'Fund Name'}
+                  </label>
                   <input
                     type="text"
                     required
@@ -1098,7 +1136,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                   </span>
                 );
               })()}
-              {category === 'mutual_funds' && (
+              {(category === 'mutual_funds' || category === 'emergency_funds' || category === 'mini_mart_funds') && (
                 <span>
                   Units: {calculateMutualFundUnits(parseFloat(amount) || 0, parseFloat(navAtPurchase) || 1).toFixed(4)}
                 </span>
