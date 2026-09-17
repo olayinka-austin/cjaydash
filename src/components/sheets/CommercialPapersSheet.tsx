@@ -14,10 +14,27 @@ export const CommercialPapersSheet: React.FC<SheetProps> = ({ onOpenAddModal }) 
   const [editIsTax, setEditIsTax] = useState<boolean>(false);
   const [editTaxRate, setEditTaxRate] = useState<string>('10.00');
 
+  // Month Tag Editing
+  const [editingMonthId, setEditingMonthId] = useState<string | null>(null);
+  const [editMonth, setEditMonth] = useState<string>('');
+
   const totalInvested = commercialPaperRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
   const totalInterest = commercialPaperRecords.reduce((acc, r) => acc + (r.interestEarnedNaira || 0), 0);
   const totalTax = commercialPaperRecords.reduce((acc, r) => acc + (r.taxAmountNaira || 0), 0);
   const totalAtMaturity = commercialPaperRecords.reduce((acc, r) => acc + (r.totalAtMaturityNaira || 0), 0);
+
+  const startEditMonth = (r: CommercialPaperRecord) => {
+    setEditingMonthId(r.id);
+    setEditMonth(r.month || '');
+  };
+
+  const saveEditMonth = (id: string) => {
+    const trimmed = editMonth.trim();
+    if (trimmed) {
+      updateCommercialPaper(id, { month: trimmed });
+    }
+    setEditingMonthId(null);
+  };
 
   const startEditTax = (r: CommercialPaperRecord) => {
     setEditingTaxId(r.id);
@@ -118,7 +135,56 @@ export const CommercialPapersSheet: React.FC<SheetProps> = ({ onOpenAddModal }) 
               {commercialPaperRecords.map((r, idx) => (
                 <tr key={r.id} className="hover:bg-[#faf9f8] transition-colors">
                   <td className="py-3.5 px-3 font-mono text-[#747878]">{r.sNo || idx + 1}</td>
-                  <td className="py-3.5 px-3 font-mono text-[#1a1c1c]">{r.month}</td>
+                  <td className="py-3.5 px-3 font-mono">
+                    {editingMonthId === r.id ? (
+                      <div className="flex items-center gap-1 bg-[#ffffff] border border-[#1b6b51] p-1 rounded shadow-sm">
+                        <input
+                          type="text"
+                          value={editMonth}
+                          onChange={(e) => setEditMonth(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEditMonth(r.id);
+                            if (e.key === 'Escape') setEditingMonthId(null);
+                          }}
+                          className="w-20 px-1 py-0.5 border border-[#e3e2e1] rounded font-mono text-xs"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => saveEditMonth(r.id)}
+                          className="p-0.5 bg-[#1b6b51] text-[#ffffff] rounded hover:bg-[#14533d]"
+                          title="Save Month Tag"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => setEditingMonthId(null)}
+                          className="p-0.5 bg-[#f4f3f2] text-[#444748] rounded hover:bg-[#e3e2e1]"
+                          title="Cancel"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="flex items-center gap-1.5 group cursor-pointer"
+                        onClick={() => startEditMonth(r)}
+                        title="Click to edit month tag"
+                      >
+                        <span className="text-[#1a1c1c]">{r.month || '—'}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditMonth(r);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-[#747878] hover:text-[#1a1c1c] transition-opacity p-0.5"
+                          title="Edit Month Tag"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
                   <td className="py-3.5 px-3 font-mono text-[#1a1c1c]">{formatDate(r.investmentDate)}</td>
                   <td className="py-3.5 px-3 font-mono font-semibold text-[#1a1c1c]">{formatNaira(r.amountInvestedNaira)}</td>
                   <td className="py-3.5 px-3 font-mono text-[#747878]">{r.tenorDays} days</td>

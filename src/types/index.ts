@@ -169,8 +169,11 @@ export interface FgnBondRecord extends BaseRecord {
   broker: string; // e.g., 'MERISTERN CHIJIOKE', 'AFRINVEST KATE'
   investmentMonth: string; // e.g., 'FEBRUARY', 'MARCH', 'APRIL'
   investmentYear: number; // default 2025
+  investmentDate?: string; // e.g. '2027-04-15'
   amountInvestedNaira: number;
   tenorYears: number; // usually 2 or 3
+  maturityYear?: number; // calculated startYear + tenorYears
+  maturityDate?: string; // calculated maturity date
   interestRatePercent: number; // Investment Rate (e.g., 18.00)
   grossQuarterlyInterestNaira?: number; // (amountInvestedNaira * interestRatePercent / 100) / 4
   taxApplicable?: boolean; // Tax Applicable: Yes/No

@@ -72,6 +72,7 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
   const [broker, setBroker] = useState<string>('MERISTERN CHIJIOKE');
   const [foreignBroker, setForeignBroker] = useState<string>('Interactive Brokers');
   const [investMonth, setInvestMonth] = useState<string>('FEBRUARY');
+  const [investYear, setInvestYear] = useState<string>(new Date().getFullYear().toString() || '2025');
   const [tenorYears, setTenorYears] = useState<string>('3');
   const [goldSpotPrice, setGoldSpotPrice] = useState<string>(settings.currentGoldSpotPriceUsd.toString());
   const [ticker, setTicker] = useState<string>('GLD');
@@ -323,13 +324,16 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
         const freq = settings.fgnInterestFrequency || 'Quarterly';
         const calc = calculateFgnBondQuarterlyInterest(amt, rPct, taxApplicable, tRate, freq);
         const pMonths = getFgnBondPaymentMonths(investMonth, freq);
+        const parsedYear = investYear ? (parseInt(investYear, 10) || 2025) : (date ? (parseInt(date.split('-')[0], 10) || new Date(date).getFullYear()) : 2025);
         addFgnBond({
           sNo: Date.now() % 1000,
           broker: broker || 'MERISTERN CHIJIOKE',
           investmentMonth: investMonth.toUpperCase(),
-          investmentYear: new Date(date).getFullYear() || 2025,
+          investmentYear: parsedYear,
+          investmentDate: date,
           amountInvestedNaira: amt,
           tenorYears: tYrs,
+          maturityYear: parsedYear + tYrs,
           interestRatePercent: rPct,
           taxApplicable,
           taxRatePercent: tRate,
@@ -499,7 +503,18 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                 type="date"
                 required
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  if (e.target.value) {
+                    const yr = e.target.value.split('-')[0];
+                    if (yr) setInvestYear(yr);
+                    const monthIndex = new Date(e.target.value + 'T12:00:00Z').getUTCMonth();
+                    const monthNames = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+                    if (monthNames[monthIndex]) {
+                      setInvestMonth(monthNames[monthIndex]);
+                    }
+                  }
+                }}
                 className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono text-[#1a1c1c]"
               />
             </div>
@@ -784,6 +799,15 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
             {(category === 'mutual_funds' || category === 'emergency_funds' || category === 'mini_mart_funds') && (
               <>
                 <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Month Tag</label>
+                  <input
+                    type="text"
+                    value={monthName}
+                    onChange={(e) => setMonthName(e.target.value)}
+                    className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono"
+                  />
+                </div>
+                <div>
                   <label className="text-[11px] font-semibold text-[#747878] uppercase">
                     {category === 'emergency_funds' ? 'Emergency Fund Name / Vault' : category === 'mini_mart_funds' ? 'Mini Mart Fund / Asset' : 'Fund Name'}
                   </label>
@@ -854,6 +878,18 @@ export const AddInvestmentModal: React.FC<AddModalProps> = ({ isOpen, onClose, d
                       <option key={m} value={m}>{m}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Investment Year</label>
+                  <input
+                    type="number"
+                    min="2020"
+                    max="2060"
+                    required
+                    value={investYear}
+                    onChange={(e) => setInvestYear(e.target.value)}
+                    className="w-full mt-1 bg-[#faf9f8] border border-[#e3e2e1] rounded px-3 py-1.5 font-mono"
+                  />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-[#747878] uppercase">Amount Invested (₦)</label>

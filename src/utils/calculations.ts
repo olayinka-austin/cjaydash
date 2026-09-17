@@ -290,6 +290,59 @@ export const getFgnBondPaymentMonths = (
   return paymentMonths;
 };
 
+// FGN Bond Start, Maturity, and Dynamic Year Range Resolvers
+export const getFgnBondStartYear = (record: { investmentYear?: number; investmentDate?: string; createdAt?: string }): number => {
+  if (record.investmentYear && typeof record.investmentYear === 'number' && record.investmentYear > 2000) {
+    return record.investmentYear;
+  }
+  if (record.investmentDate) {
+    const parsed = parseInt(record.investmentDate.split('-')[0], 10);
+    if (!isNaN(parsed) && parsed > 2000) {
+      return parsed;
+    }
+  }
+  if (record.createdAt) {
+    const parsed = new Date(record.createdAt).getFullYear();
+    if (!isNaN(parsed) && parsed > 2000) {
+      return parsed;
+    }
+  }
+  return 2025;
+};
+
+export const getFgnBondMaturityYear = (record: { investmentYear?: number; investmentDate?: string; tenorYears?: number; maturityYear?: number; createdAt?: string }): number => {
+  if (record.maturityYear && typeof record.maturityYear === 'number' && record.maturityYear > 2000) {
+    return record.maturityYear;
+  }
+  const startYear = getFgnBondStartYear(record);
+  const tenorYears = typeof record.tenorYears === 'number' && record.tenorYears > 0 ? record.tenorYears : 3;
+  return startYear + tenorYears;
+};
+
+export const getFgnBondAvailableYears = (records: Array<{ investmentYear?: number; investmentDate?: string; tenorYears?: number; maturityYear?: number; createdAt?: string }>): number[] => {
+  const currentYear = new Date().getFullYear();
+  const defaultFallback = [currentYear, currentYear + 1, currentYear + 2, currentYear + 3];
+
+  if (!records || records.length === 0) {
+    return defaultFallback;
+  }
+  const allStarts = records.map(r => getFgnBondStartYear(r));
+  const allEnds = records.map(r => getFgnBondMaturityYear(r));
+
+  const minYear = Math.min(...allStarts);
+  const maxYear = Math.max(...allEnds);
+
+  if (!isFinite(minYear) || !isFinite(maxYear) || minYear > maxYear) {
+    return defaultFallback;
+  }
+
+  const years: number[] = [];
+  for (let y = minYear; y <= maxYear; y++) {
+    years.push(y);
+  }
+  return years.length > 0 ? years : defaultFallback;
+};
+
 // 7. Gold ETF Buy Calculations
 export const calculateGoldEtfBuy = (unitPriceUsd: number, qty: number, commissionUsd: number, dollarRateNaira: number) => {
   const amountUsd = Number((unitPriceUsd * qty).toFixed(4));

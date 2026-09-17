@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useWealth } from '../../context/WealthContext';
-import { formatNaira, formatPercent, calculateFgnBondQuarterlyInterest } from '../../utils/calculations';
+import { 
+  formatNaira, 
+  formatPercent, 
+  calculateFgnBondQuarterlyInterest,
+  getFgnBondPaymentMonths,
+  getFgnBondStartYear,
+  getFgnBondMaturityYear,
+  getFgnBondAvailableYears
+} from '../../utils/calculations';
 import { Trash2, Plus, Calendar, Edit2, Check, X } from 'lucide-react';
 import { FgnBondRecord } from '../../types';
 
@@ -16,6 +24,35 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
   const [editingTaxId, setEditingTaxId] = useState<string | null>(null);
   const [editIsTax, setEditIsTax] = useState<boolean>(false);
   const [editTaxRate, setEditTaxRate] = useState<string>('10.00');
+
+  // Full Bond Edit State
+  const [editingBond, setEditingBond] = useState<FgnBondRecord | null>(null);
+  const [editBroker, setEditBroker] = useState<string>('');
+  const [editInvestMonth, setEditInvestMonth] = useState<string>('FEBRUARY');
+  const [editInvestYear, setEditInvestYear] = useState<number>(2025);
+  const [editAmount, setEditAmount] = useState<string>('1500000');
+  const [editRate, setEditRate] = useState<string>('18.00');
+  const [editTenorYears, setEditTenorYears] = useState<number>(3);
+  const [editBondTaxApplicable, setEditBondTaxApplicable] = useState<boolean>(false);
+  const [editBondTaxRate, setEditBondTaxRate] = useState<string>('10.00');
+
+  // Derive dynamic timeline years from actual portfolio records
+  const availableYears = useMemo(() => {
+    return getFgnBondAvailableYears(fgnBondRecords);
+  }, [fgnBondRecords]);
+
+  // Keep activeYear valid when availableYears changes (addition, deletion, or edits)
+  useEffect(() => {
+    if (availableYears.length > 0 && !availableYears.includes(activeYear)) {
+      if (activeYear > availableYears[availableYears.length - 1]) {
+        setActiveYear(availableYears[availableYears.length - 1]);
+      } else if (activeYear < availableYears[0]) {
+        setActiveYear(availableYears[0]);
+      } else {
+        setActiveYear(availableYears[0]);
+      }
+    }
+  }, [availableYears, activeYear]);
 
   const totalInvested = fgnBondRecords.reduce((acc, r) => acc + (r.amountInvestedNaira || 0), 0);
   const totalQuarterlyInterest = fgnBondRecords.reduce((acc, r) => acc + (r.quarterlyInterestNaira || 0), 0);
@@ -47,6 +84,48 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
     setEditingTaxId(null);
   };
 
+  const openEditModal = (r: FgnBondRecord) => {
+    setEditingBond(r);
+    setEditBroker(r.broker || '');
+    setEditInvestMonth((r.investmentMonth || 'FEBRUARY').toUpperCase());
+    setEditInvestYear(getFgnBondStartYear(r));
+    setEditAmount((r.amountInvestedNaira || 0).toString());
+    setEditRate((r.interestRatePercent || 0).toString());
+    setEditTenorYears(r.tenorYears || 3);
+    setEditBondTaxApplicable(!!r.taxApplicable);
+    setEditBondTaxRate((r.taxRatePercent ?? 10).toString());
+  };
+
+  const handleSaveBondEdit = () => {
+    if (!editingBond) return;
+    const amt = parseFloat(editAmount) || editingBond.amountInvestedNaira;
+    const rPct = parseFloat(editRate) || editingBond.interestRatePercent;
+    const tYrs = parseInt(editTenorYears as any, 10) || 3;
+    const tRate = editBondTaxApplicable ? (parseFloat(editBondTaxRate) || 0) : 0;
+    const freq = 'Quarterly';
+    const calc = calculateFgnBondQuarterlyInterest(amt, rPct, editBondTaxApplicable, tRate, freq);
+    const pMonths = getFgnBondPaymentMonths(editInvestMonth, freq);
+    const maturityYear = editInvestYear + tYrs;
+
+    updateFgnBond(editingBond.id, {
+      broker: editBroker,
+      investmentMonth: editInvestMonth.toUpperCase(),
+      investmentYear: editInvestYear,
+      amountInvestedNaira: amt,
+      tenorYears: tYrs,
+      maturityYear,
+      interestRatePercent: rPct,
+      taxApplicable: editBondTaxApplicable,
+      taxRatePercent: tRate,
+      grossQuarterlyInterestNaira: calc.grossQuarterlyInterest,
+      taxAmountNaira: calc.taxAmount,
+      netQuarterlyInterestNaira: calc.netQuarterlyInterest,
+      quarterlyInterestNaira: calc.quarterlyInterestNaira,
+      paymentMonths: pMonths
+    });
+    setEditingBond(null);
+  };
+
   const calendarMonths = [
     'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
     'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
@@ -58,9 +137,8 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
     const isPaymentMonth = record.paymentMonths?.some((m: string) => (m || '').toUpperCase().trim() === targetMonth);
     if (!isPaymentMonth) return 0;
 
-    const startYear = record.investmentYear || 2025;
-    const tenorYears = record.tenorYears || 3;
-    const endYear = startYear + tenorYears;
+    const startYear = getFgnBondStartYear(record);
+    const endYear = getFgnBondMaturityYear(record);
 
     const startMonthStr = (record.investmentMonth || 'FEBRUARY').toUpperCase().trim();
     const startMonthIdx = calendarMonths.indexOf(startMonthStr);
@@ -144,12 +222,12 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
 
         <div className="flex items-center gap-3">
           {viewMode === 'CALENDAR' && (
-            <div className="flex items-center bg-[#eeeeed] dark:bg-[#222625] p-0.5 rounded text-xs font-semibold">
-              {[2025, 2026, 2027, 2028].map((yr) => (
+            <div className="flex items-center bg-[#eeeeed] dark:bg-[#222625] p-0.5 rounded text-xs font-semibold overflow-x-auto max-w-full">
+              {availableYears.map((yr) => (
                 <button
                   key={yr}
                   onClick={() => setActiveYear(yr)}
-                  className={`px-3 py-1 rounded transition-all cursor-pointer font-mono ${
+                  className={`px-3 py-1 rounded transition-all cursor-pointer font-mono whitespace-nowrap ${
                     activeYear === yr ? 'bg-accent text-white dark:text-[#111313] shadow-xs' : 'text-[#747878] dark:text-[#8c9290] hover:text-[#1a1c1c] dark:hover:text-[#e1e3e2]'
                   }`}
                 >
@@ -286,9 +364,13 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
                   <tr key={r.id} className="hover:bg-[#faf9f8] transition-colors">
                     <td className="py-3.5 px-3 font-mono text-[#747878]">{r.sNo || idx + 1}</td>
                     <td className="py-3.5 px-3 font-semibold text-[#1a1c1c]">{r.broker}</td>
-                    <td className="py-3.5 px-3 font-mono uppercase text-[#1a1c1c]">{r.investmentMonth}</td>
+                    <td className="py-3.5 px-3 font-mono uppercase text-[#1a1c1c]">
+                      {r.investmentMonth} {r.investmentYear || 2025}
+                    </td>
                     <td className="py-3.5 px-3 font-mono font-semibold text-[#1a1c1c]">{formatNaira(r.amountInvestedNaira)}</td>
-                    <td className="py-3.5 px-3 font-mono text-[#747878]">{r.tenorYears || 3} Years</td>
+                    <td className="py-3.5 px-3 font-mono text-[#747878]">
+                      {r.tenorYears || 3} Yrs <span className="text-[10px] text-[#747878]">(Mat: {getFgnBondMaturityYear(r)})</span>
+                    </td>
                     <td className="py-3.5 px-3 font-mono font-semibold text-[#1a1c1c]">{formatPercent(r.interestRatePercent)}</td>
 
                     {/* Tax Rate & Status with Quick Edit */}
@@ -373,8 +455,19 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
                         {r.status || 'Active'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-right">
-                      <button onClick={() => deleteFgnBond(r.id)} className="text-[#747878] hover:text-[#ba1a1a] p-1 rounded">
+                    <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                      <button 
+                        onClick={() => openEditModal(r)} 
+                        className="text-[#747878] hover:text-accent p-1 rounded mr-1 cursor-pointer transition-colors"
+                        title="Edit Bond Details"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => deleteFgnBond(r.id)} 
+                        className="text-[#747878] hover:text-[#ba1a1a] p-1 rounded cursor-pointer transition-colors"
+                        title="Delete Bond"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
@@ -391,6 +484,152 @@ export const FgnBondsSheet: React.FC<SheetProps> = ({ onOpenAddModal }) => {
                 </tr>
               </tfoot>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT BOND MODAL */}
+      {editingBond && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-[#ffffff] dark:bg-[#191c1b] border border-[#e3e2e1] dark:border-[#2d3130] rounded shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-5 py-4 border-b border-[#e3e2e1] dark:border-[#2d3130] flex items-center justify-between bg-[#faf9f8] dark:bg-[#222625]">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#1a1c1c] dark:text-[#e1e3e2]">
+                  Edit FGN Bond Allotment
+                </h3>
+                <p className="text-[11px] text-[#747878] dark:text-[#8c9290]">
+                  Update investment year, tenure, or return metrics
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingBond(null)}
+                className="text-[#747878] hover:text-[#1a1c1c] dark:hover:text-[#e1e3e2] p-1 rounded cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Broker / Custodian</label>
+                  <input
+                    type="text"
+                    value={editBroker}
+                    onChange={(e) => setEditBroker(e.target.value)}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-medium text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Investment Month</label>
+                  <select
+                    value={editInvestMonth}
+                    onChange={(e) => setEditInvestMonth(e.target.value)}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono uppercase text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  >
+                    {calendarMonths.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Investment Year</label>
+                  <input
+                    type="number"
+                    min="2020"
+                    max="2060"
+                    value={editInvestYear}
+                    onChange={(e) => setEditInvestYear(parseInt(e.target.value, 10) || 2025)}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Tenor (Years)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={editTenorYears}
+                    onChange={(e) => setEditTenorYears(parseInt(e.target.value, 10) || 3)}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  />
+                  <span className="text-[10px] text-[#747878] mt-0.5 block">
+                    Matures in: <strong className="font-mono">{editInvestYear + (parseInt(editTenorYears as any, 10) || 3)}</strong>
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Amount Invested (₦)</label>
+                  <input
+                    type="number"
+                    step="100000"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-[#747878] uppercase">Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editRate}
+                    onChange={(e) => setEditRate(e.target.value)}
+                    className="w-full mt-1 bg-[#faf9f8] dark:bg-[#222625] border border-[#e3e2e1] dark:border-[#2d3130] rounded px-3 py-1.5 font-mono text-[#1a1c1c] dark:text-[#e1e3e2]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 bg-[#f4f3f2]/60 dark:bg-[#222625]/60 border border-[#e3e2e1] dark:border-[#2d3130] p-3 rounded">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editBondTaxApplicable}
+                        onChange={(e) => setEditBondTaxApplicable(e.target.checked)}
+                        className="rounded border-[#c4c7c7] text-[#1b6b51] w-3.5 h-3.5"
+                      />
+                      <span className="font-semibold text-[11px] uppercase">Withholding Tax Applicable</span>
+                    </label>
+
+                    {editBondTaxApplicable && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] text-[#747878]">Rate:</span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={editBondTaxRate}
+                          onChange={(e) => setEditBondTaxRate(e.target.value)}
+                          className="w-16 px-2 py-0.5 border border-[#e3e2e1] dark:border-[#2d3130] rounded font-mono text-[11px] bg-white dark:bg-[#191c1b]"
+                          placeholder="%"
+                        />
+                        <span className="text-[11px] text-[#747878]">%</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-[#e3e2e1] dark:border-[#2d3130] bg-[#faf9f8] dark:bg-[#222625] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingBond(null)}
+                className="px-4 py-2 border border-[#e3e2e1] dark:border-[#2d3130] text-[#444748] dark:text-[#c2c7c5] hover:bg-[#f4f3f2] dark:hover:bg-[#2d3130] rounded text-xs font-semibold uppercase tracking-wider cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBondEdit}
+                className="px-4 py-2 bg-accent hover:opacity-95 text-white dark:text-[#111313] rounded text-xs font-semibold uppercase tracking-wider shadow-xs cursor-pointer"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -310,6 +310,10 @@ export const WealthProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setSettings(docSnap.data().settings);
       }
     }, (error) => {
+      if (error.code === 'unavailable' || error.message?.includes('offline') || error.message?.includes('could not reach')) {
+        console.info('User settings listener is operating in offline/cached mode.');
+        return;
+      }
       console.warn('Settings listener error:', error);
     });
 
